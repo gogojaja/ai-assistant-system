@@ -29,7 +29,16 @@ PROJECT_ROOT = SCRIPT_DIR.parent
 
 
 def get_local_health() -> bool:
-    url = "http://127.0.0.1:5001/health"
+    settings_file = PROJECT_ROOT / "config" / "settings.yaml"
+    port = 5001
+    try:
+        import yaml
+        with open(settings_file) as f:
+            cfg = yaml.safe_load(f)
+        port = cfg.get("callback_port", 5001)
+    except Exception:
+        pass
+    url = f"http://127.0.0.1:{port}/health"
     try:
         resp = requests.get(url, timeout=10)
         if resp.status_code == 200 and resp.json().get("status") == "ok":

@@ -24,7 +24,7 @@ from pathlib import Path
 from datetime import datetime
 
 # 确保始终使用项目 venv 的 Python 执行
-_project_root = Path.home() / "ai-assistant-system"
+_project_root = Path(__file__).resolve().parent.parent
 _venv_python = _project_root / "venv" / "bin" / "python"
 if _venv_python.exists() and sys.executable != str(_venv_python):
     os.execv(str(_venv_python), [str(_venv_python)] + sys.argv)
@@ -36,8 +36,9 @@ logger = logging.getLogger("diagnose")
 # ------------------------------------------------------------
 # 预期配置（来源于设计文档）
 # ------------------------------------------------------------
+project_root = Path(__file__).resolve().parent.parent
 EXPECTED = {
-    "project_root": str(Path.home() / "ai-assistant-system"),
+    "project_root": str(project_root),
     "python_version_min": (3, 10),
     "python_version_max": (3, 12),
     "venv_paths": [
