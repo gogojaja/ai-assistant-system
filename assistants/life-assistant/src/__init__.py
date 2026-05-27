@@ -11,6 +11,10 @@ from .workout_planner import (
     create as wp_create, list_plans, view as wp_view,
     add_exercise, log_workout, history as wp_history, delete as wp_del,
 )
+from .work_planner import (
+    create as work_create, list_items as work_list, view as work_view,
+    set_status, set_priority, set_deadline, set_notes, delete as work_del,
+)
 
 HELP_TEXT = """🤖 3号AI 生活助手
 📅 日程管理：
@@ -40,10 +44,23 @@ HELP_TEXT = """🤖 3号AI 生活助手
   #3 workout log <id> [备注]               — 记录一次训练
   #3 workout history <id>                  — 查看训练历史
   #3 workout del <id>                       — 删除计划
+📋 工作规划：
+  #3 work create <标题>                    — 创建工作项
+  #3 work list [todo/doing/done]           — 查看工作列表
+  #3 work view <id>                        — 查看详情
+  #3 work start <id>                       — 开始做
+  #3 work done <id>                        — 标记完成
+  #3 work reopen <id>                      — 重新打开
+  #3 work priority <id> <高/中/低>          — 设置优先级
+  #3 work deadline <id> <日期>             — 设置截止
+  #3 work note <id> <备注>                 — 添加备注
+  #3 work del <id>                          — 删除
+🗄️ 网页看板：
+  #3 dashboard                             — 打开网页看板
 ❓ #3 help  — 显示此帮助"""
 
 
-def process(text, open_id=""):
+def process(text, open_id="", dashboard_url=""):
     text = text.strip()
     for prefix in ["#3 ", "#life ", "#3", "#life"]:
         if text.startswith(prefix):
@@ -51,6 +68,10 @@ def process(text, open_id=""):
             break
     if not text or text == "help":
         return HELP_TEXT
+    if text == "dashboard":
+        if dashboard_url:
+            return f"📊 网页看板已开启：\n{dashboard_url}\n\n建议在手机浏览器或飞书中打开查看。"
+        return "📊 网页看板地址未配置，请联系管理员设置 dashboard_url。"
 
     parts = text.split()
     cmd = parts[0]
@@ -64,6 +85,8 @@ def process(text, open_id=""):
         return _handle_travel(args)
     elif cmd == "workout":
         return _handle_workout(args)
+    elif cmd == "work":
+        return _handle_work(args)
     else:
         return f"❌ 未知命令：{cmd}\n\n{HELP_TEXT}"
 
@@ -232,6 +255,68 @@ def _handle_workout(args):
         if not rest:
             return "❌ 格式：#3 workout del <id>"
         return wp_del(rest[0])
+
+    else:
+        return f"❌ 未知子命令：{sub}"
+
+
+def _handle_work(args):
+    if not args:
+        return "📋 用法：\n  #3 work create <标题>\n  #3 work list [todo/doing/done]\n  #3 work view <id>\n  #3 work start <id>\n  #3 work done <id>\n  #3 work reopen <id>\n  #3 work priority <id> <高/中/低>\n  #3 work deadline <id> <日期>\n  #3 work note <id> <备注>\n  #3 work del <id>"
+    sub = args[0]
+    rest = args[1:]
+
+    if sub == "create":
+        if not rest:
+            return "❌ 格式：#3 work create <标题>"
+        item = work_create(" ".join(rest))
+        return f"✅ 已创建工作项：{item['title']}（{item['id']}）"
+
+    elif sub == "list":
+        status = rest[0] if rest else None
+        if status and status not in ("todo", "doing", "done", "all"):
+            return "❌ 支持：todo / doing / done / all（留空=全部）"
+        return work_list(status)
+
+    elif sub == "view":
+        if not rest:
+            return "❌ 格式：#3 work view <id>"
+        return work_view(rest[0])
+
+    elif sub == "start":
+        if not rest:
+            return "❌ 格式：#3 work start <id>"
+        return set_status(rest[0], "doing")
+
+    elif sub == "done":
+        if not rest:
+            return "❌ 格式：#3 work done <id>"
+        return set_status(rest[0], "done")
+
+    elif sub == "reopen":
+        if not rest:
+            return "❌ 格式：#3 work reopen <id>"
+        return set_status(rest[0], "todo")
+
+    elif sub == "priority":
+        if len(rest) < 2:
+            return "❌ 格式：#3 work priority <id> <高/中/低>"
+        return set_priority(rest[0], rest[1])
+
+    elif sub == "deadline":
+        if len(rest) < 2:
+            return "❌ 格式：#3 work deadline <id> <日期>"
+        return set_deadline(rest[0], rest[1])
+
+    elif sub == "note":
+        if len(rest) < 2:
+            return "❌ 格式：#3 work note <id> <备注>"
+        return set_notes(rest[0], " ".join(rest[1:]))
+
+    elif sub == "del":
+        if not rest:
+            return "❌ 格式：#3 work del <id>"
+        return work_del(rest[0])
 
     else:
         return f"❌ 未知子命令：{sub}"

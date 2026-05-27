@@ -57,6 +57,10 @@ except ImportError as e:
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
 
+# 注册看板
+from dashboard import dashboard_bp
+app.register_blueprint(dashboard_bp)
+
 
 @app.route("/webhook_chat", methods=["POST"])
 @app.route("/webhook", methods=["POST"])
@@ -168,7 +172,13 @@ def handle_event(data: dict):
                         cmd = cmd[len(prefix):].strip()
                         break
                 from life_assistant.src import process as process_life
-                reply = process_life(cmd)
+                import yaml
+                try:
+                    cfg = yaml.safe_load((PROJECT_ROOT / "config" / "settings.yaml").read_text())
+                    dash_url = cfg.get("dashboard_url", "")
+                except Exception:
+                    dash_url = ""
+                reply = process_life(cmd, dashboard_url=dash_url)
                 from shared.feishu_api import send_message
                 if reply:
                     send_message(target_id, reply, receive_id_type=receive_id_type)
