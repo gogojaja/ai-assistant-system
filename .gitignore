@@ -19,6 +19,10 @@ llama.cpp/
 .local/
 .backup_stamp
 
+# 临时测试文件
+test_data.xlsx
+test_report.docx
+
 # 环境特定配置（各环境独立管理，含飞书密钥 — 绝不提交到 git）
 config/settings.yaml
 **/.env
