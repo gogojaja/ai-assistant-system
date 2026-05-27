@@ -1,12 +1,12 @@
 #!/bin/bash
-# 模型名称替换脚本：qwen3:4b → qwen3:4b
+# 模型名称替换脚本：文本中模型名称批量替换
 # 仅修改文本文件，跳过虚拟环境、__pycache__、.git 等目录
 # 用法: ./update_model.sh [旧模型名] [新模型名]
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 OLD_MODEL="${1:-qwen3:4b}"
-NEW_MODEL="${2:-qwen3:4b}"
+NEW_MODEL="${2:-qwen2.5:7b}"
 echo "============================================"
 echo " 模型名称替换脚本"
 echo " $OLD_MODEL → $NEW_MODEL"

@@ -74,7 +74,7 @@ EXPECTED = {
     },
     "config_file": "config/settings.yaml",
     "model_info": {
-        "name": "qwen3:4b",
+        "name": "qwen2.5:7b",
         "expected_speed": 33
     }
 }
@@ -223,7 +223,7 @@ class EnvironmentDiagnoser:
 
     def check_model_file(self):
         try:
-            find_cmd = ["find", str(Path.home() / ".local/lib/ollama/blobs"), "-name", "sha256-3e4cb1417446*", "-size", "+1G"]
+            find_cmd = ["find", str(Path.home() / ".local/lib/ollama/blobs"), "-name", "sha256-2bada8a74506*", "-size", "+1G"]
             result = subprocess.run(find_cmd, capture_output=True, text=True)
             model_path = result.stdout.strip().split('\n')[0] if result.stdout.strip() else None
             self.report["checks"]["model_file"] = {

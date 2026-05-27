@@ -7,6 +7,9 @@ DATA_DIR = Path(__file__).resolve().parent.parent.parent.parent / "data" / "life
 WORK_FILE = DATA_DIR / "works.json"
 
 STATUS_ICON = {"todo": "📋", "doing": "🔄", "done": "✅"}
+STATUS_LABEL = {"todo": "待办", "doing": "进行中", "done": "已完成", "all": "全部"}
+STATUS_MAP = {v: k for k, v in STATUS_LABEL.items()}
+STATUS_MAP.update({"todo": "todo", "doing": "doing", "done": "done", "all": "all"})
 PRIORITIES = ["高", "中", "低"]
 
 
@@ -44,9 +47,10 @@ def list_items(status=None):
     if not items:
         return "📋 暂无工作项。"
     if status and status != "all":
-        if status not in ("todo", "doing", "done"):
-            return f"❌ 不支持的状态：{status}（支持：todo/doing/done/all）"
-        items = [i for i in items if i["status"] == status]
+        eng_status = STATUS_MAP.get(status, status)
+        if eng_status not in ("todo", "doing", "done"):
+            return f"❌ 不支持的状态：{status}（支持：待办/进行中/已完成/全部）"
+        items = [i for i in items if i["status"] == eng_status]
         if not items:
             return f"📋 没有「{status}」状态的工作项。"
     lines = ["📋 工作列表："]
@@ -69,7 +73,7 @@ def view(item_id):
             p_icon = "🔴" if item["priority"] == "高" else "🟡" if item["priority"] == "中" else "🟢"
             lines = [
                 f"{icon} {item['title']}",
-                f"  状态：{item['status']}",
+                f"  状态：{STATUS_LABEL.get(item['status'], item['status'])}",
                 f"  优先级：{p_icon}{item['priority']}",
             ]
             if item.get("deadline"):
@@ -86,10 +90,11 @@ def set_status(item_id, status):
     for item in items:
         if item["id"] == item_id:
             old = item["status"]
-            item["status"] = status
+            eng_status = STATUS_MAP.get(status, status)
+            item["status"] = eng_status
             _save(items)
-            icon = STATUS_ICON.get(status, "📋")
-            return f"{icon} {item['title']}：{old} → {status}"
+            icon = STATUS_ICON.get(eng_status, "📋")
+            return f"{icon} {item['title']}：{STATUS_LABEL.get(old, old)} → {STATUS_LABEL.get(eng_status, eng_status)}"
     return f"❌ 未找到工作项 ID：{item_id}"
 
 

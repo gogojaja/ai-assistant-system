@@ -32,7 +32,7 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(asctime)s - %(
 logger = logging.getLogger(__name__)
 
 PROMPTS_DIR = Path("/Users/gogo/ai-assistant-system/prompts")
-MODEL_NAME = "qwen3:4b"
+MODEL_NAME = "qwen2.5:7b"
 MAX_HISTORY_TURNS = 10
 
 
@@ -70,7 +70,7 @@ def _get_backend_config():
             cfg = yaml.safe_load(config_path.read_text())
             backend = cfg.get("backend", "llama.cpp")
             port = cfg.get("ollama_port", 11434) if backend == "ollama" else cfg.get("llama_port", 8080)
-            return {"backend": backend, "port": port, "model": cfg.get("ollama_model", "qwen3:4b") if backend == "ollama" else "gpt-3.5-turbo"}
+            return {"backend": backend, "port": port, "model": cfg.get("ollama_model", "qwen2.5:7b") if backend == "ollama" else "gpt-3.5-turbo"}
     except:
         pass
     return {"backend": "llama.cpp", "port": 8080, "model": "gpt-3.5-turbo"}

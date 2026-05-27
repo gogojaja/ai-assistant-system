@@ -38,7 +38,7 @@ cat > "$PROJECT/docs/02-design/01-系统架构.md" << 'MDEOF'
 └── 共享层（语音识别 Whisper.cpp）
 ↓
 llama.cpp server (8080)
-模型: qwen3:4b (Metal 加速)
+模型: qwen2.5:7b (Metal 加速)
 
 text
 
@@ -76,7 +76,7 @@ text
 | 运行环境 | Python venv | 3.12.13 | 原生、无需 sudo |
 | Web 框架 | Flask | 2.3.3 | 轻量、易集成 |
 | 推理服务 | llama.cpp server | latest | Metal 优化，速度 33 tok/s |
-| 模型 | qwen3:4b (Q4_K_M) | - | 中文友好，4B 参数 |
+| 模型 | qwen2.5:7b (Q4_K_M) | - | 中文友好，7B 参数 |
 | 语音识别 | Whisper.cpp | base 模型 | 本地离线、arm64 优化 |
 | 音频处理 | ffmpeg | 8.1.1 | 格式转换 |
 | 内网穿透 | Cloudflared | latest | 无需注册、稳定 |
@@ -109,8 +109,7 @@ text
 
 - **推理服务**：llama.cpp server 运行正常，Metal 加速，速度约 33 tok/s。
 - **回调服务**：Flask 服务正常，飞书隧道连通。
-- **已知问题**：qwen3:4b 模型在 llama.cpp 中会将推理过程放入 `reasoning_content` 字段，导致 `content` 为空，机器人返回兜底回复。  
-  修复方向：在 `main.py` 的 `talk` 函数中兼容 `reasoning_content`，或为 llama-server 添加 `--no-reasoning` 参数（需测试兼容性）。
+- **模型**：已切换至 qwen2.5:7b - 无 reasoning_content 问题，响应质量更高。
 
 ---
 
@@ -119,7 +118,7 @@ text
 - **一键启动**：`scripts/start_all_services.sh`
 - **一键停止**：`scripts/stop_all_services.sh`
 - **重启回调**：`scripts/restart_callback.sh`
-- **模型测速**：`scripts/benchmark_llama.sh qwen3:4b`
+- **模型测速**：`scripts/benchmark_llama.sh qwen2.5:7b`
 - **环境诊断**：`scripts/diagnose.sh`
 
 MDEOF
@@ -163,7 +162,7 @@ cmake --build build --config Release -j4
 12.2 启动服务（已集成到 start_all_services.sh）
 
 bash
-MODEL_FILE=$(find ~/.local/lib/ollama/blobs -name "sha256-3e4cb1417446*" -size +1G | head -1)
+MODEL_FILE=$(find ~/.local/lib/ollama/blobs -name "sha256-2bada8a74506*" -size +1G | head -1)
 nohup ~/llama.cpp/build/bin/llama-server \
     -m "$MODEL_FILE" \
     --host 0.0.0.0 --port 8080 \
@@ -203,7 +202,7 @@ cat > "$PROJECT/docs/03-project-management/01-进度台账.md" << 'MDEOF'
 天次	任务	状态	完成日期	备注
 ...	（前期任务略）	...	...	...
 Day12-16	2号AI Word 处理功能开发	✅	2026-05-22	解析、摘要、转换、飞书回调
-Day17	模型更换为 qwen3:4b，切换推理后端至 llama.cpp	✅	2026-05-23	速度提升至 33 tok/s
+Day17	模型更换为 qwen2.5:7b，切换推理后端至 llama.cpp	✅	2026-05-23	速度提升至 33 tok/s
 Day18	天气查询、翻译功能优化	✅	2026-05-23	
 Day19	上下文时间/位置注入	✅	2026-05-23	
 Day20	2号AI Excel 处理核心类开发	✅	2026-05-23	数据提取、统计、异常检测
@@ -212,7 +211,7 @@ Day22+	Excel 集成到飞书回调	⬜
 ...	3号AI 编程助理开发	⬜		
 三、当前阻塞
 
-模型空回复：qwen3:4b 推理输出在 reasoning_content 字段，需修复代码或启动参数。
+模型切换到 qwen2.5:7b，消除 reasoning_content 问题。
 MDEOF
 echo " ✅ 进度台账已更新"
 

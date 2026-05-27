@@ -33,6 +33,32 @@
 ### 阶段自动固化
 单独立任务完成后，自动执行：备份核心文件→更新文档版本→告知用户状态已固化、支持随时回滚。
 
+### 环境隔离铁律（绝对禁止违反）
+AI 助理在任何操作前必须执行以下环境确认流程：
+
+**第 1 步 — 路径核验（不可跳过）**
+- AI 的 workspace 固定在 `/Volumes/BR256G/ai-assistant-system/`（测试环境）
+- **禁止** 使用任何以 `/Users/gogo/ai-assistant-system/` 或 `~/ai-assistant-system/` 开头的路径
+- 文件读写、编辑、Bash 命令中出现上述路径，必须立即拒绝操作
+
+**第 2 步 — 端口核验**
+- 测试环境端口范围：5101（回调）、5102（文件）、5103（系统）
+- **禁止** 操作 5001/5002/5003 端口——这些属主环境
+- 任何 `lsof -ti:` 命令只允许指定 510x 端口
+
+**第 3 步 — 标记核验**
+- 修改任何文件前必须运行 `python3 scripts/check_env.py` 确认标记
+- `.env_type` 文件内容必须为 `test`
+- 标记不匹配则立即终止操作
+
+**第 4 步 — Bash 操作安全规范**
+- 所有 Bash 命令必须使用 `workdir` 参数指向 `/Volumes/BR256G/ai-assistant-system/`
+- **禁止** `cd /Users/gogo/` 切换目录
+- **禁止** 使用端口号 5001/5002/5003
+- **禁止** `kill` 非当前环境的进程
+
+**违反后果**：误改主环境 = 系统不可逆损坏，本会话立即终止并需全量备份恢复。
+
 ## 基础执行约束规则
 
 ### 天花板精准判定
@@ -142,9 +168,11 @@
 
 **目标**：构建一套完全本地离线、基于飞书 Bot 统一交互的五角色 AI 助理系统，数据不离开本地设备，支持 macOS Apple Silicon 推理。
 
-**架构**：飞书 Bot → cloudflared 隧道 → Flask 回调服务 (port 5001) → 推理后端 (llama.cpp 或 Ollama) → 各助手处理器 → 飞书回复
+**架构**：飞书 Bot → ngrok 隧道 → Flask 回调服务 (port 5101) → 推理后端 (llama.cpp 或 Ollama) → 各助手处理器 → 飞书回复
 
-**物理路径**：`~/ai-assistant-system/`
+**物理路径**：`~/ai-assistant-system/`（主环境）、`/Volumes/BR256G/ai-assistant-system/`（测试环境）
+
+**测试环境**：独立飞书 Bot（APP_ID=`cli_aa9c870de6799bb4`），端口 5101，与主环境 5001 互不干扰
 
 ---
 
@@ -153,8 +181,8 @@
 | 角色 | 代号 | 目录 | 定位 | 入口 |
 |------|------|------|------|------|
 | 1号AI | chat-assistant | `assistants/chat-assistant/` | 闲聊对话、天气查询、翻译搜索、知识库、语音输入 | `message_handler.process_message()` — 所有文本/语音默认进入 |
-| 2号AI | office-assistant | `assistants/office-assistant/` | Word 摘要、Excel 分析、PPT 生成、文件变更监控 | `document_handler.process_document_file()` — 飞书文件消息触发 |
-| 3号AI | life-assistant | `assistants/life-assistant/` | 个人日程管理、健康管理 | `process()` — 飞书文字 `#3`/`#life` 前缀触发 |
+| 2号AI | office-assistant | `assistants/office-assistant/` | Word 摘要、Excel 分析、PPT 生成、文件变更监控 | `document_handler.process_document_file()` — 飞书文件消息触发；`process_office_text()` — `#办公` 前缀命令 |
+| 3号AI | life-assistant | `assistants/life-assistant/` | 个人日程/健康/旅行/锻炼/工作规划管理 | `process()` — 飞书文字以 `日程/健康/旅行/锻炼/工作/看板` 关键词开头触发 |
 | 4号AI | file-assistant | `assistants/file-assistant/` | 文件传输、文件管理 | `process()` — 飞书文字 `#4`/`#file` 前缀触发 |
 | 5号AI | sys-assistant | `assistants/sys-assistant/` | 系统管理、服务启停、进程管理 | `process()` — 飞书文字 `#5`/`#sys` 前缀触发 |
 
@@ -193,19 +221,25 @@
 | OFF-04 | 根据文案生成 .pptx 成品文件 | P2 | ✅ 已实现 | `core/ppt_generator.py:generate_from_text()` / `generate_presentation()` |
 | OFF-05 | 办公文件夹变更监控（watchdog） | P2 | ✅ 已实现 | `core/folder_monitor.py:start_monitor()` / `stop_monitor()` |
 | OFF-06 | PPT 内容自动分段解析 | P2 | ✅ 已实现 | `ppt_generator.py:generate_from_text()` 按行自动拆分幻灯片 |
+| OFF-07 | `#办公` 前缀路由（替代 `#2`/`#office`） | P1 | ✅ 已实现 | `callback_server.py:161-170` |
+| OFF-08 | `转PPT` 直接路由（无需前缀） | P1 | ✅ 已实现 | `callback_server.py:171-174` |
 
 ### 3.3 3号AI 个人日程与健康管理助理
 
 | ID | 需求 | 优先级 | 状态 | 实现位置 |
 |----|------|--------|------|----------|
-| LIFE-01 | 日程创建（标题、时间、地点、备注） | P1 | 📋 待实现 | `life-assistant/src/scheduler.py` |
-| LIFE-02 | 日程查询（按日期/关键词/范围） | P1 | 📋 待实现 | `life-assistant/src/scheduler.py` |
-| LIFE-03 | 日程修改/删除 | P1 | 📋 待实现 | `life-assistant/src/scheduler.py` |
-| LIFE-04 | 日程到期提醒推送 | P2 | 📋 待实现 | `life-assistant/src/reminder.py` |
-| LIFE-05 | 健康数据记录（体重、步数、睡眠、心率等） | P1 | 📋 待实现 | `life-assistant/src/health_tracker.py` |
-| LIFE-06 | 健康数据统计与可视化（日报/周报/月报） | P2 | 📋 待实现 | `life-assistant/src/health_tracker.py` |
-| LIFE-07 | 健康趋势分析与建议 | P2 | 📋 待实现 | `life-assistant/src/health_analyzer.py` |
-| LIFE-08 | 飞书 `#3`/`#life` 前缀路由 | P1 | 📋 待实现 | `callback_server.py` 路由到 `life-assistant` |
+| LIFE-01 | 日程创建（标题、时间、地点、备注） | P1 | ✅ 已实现 | `life-assistant/src/scheduler.py` |
+| LIFE-02 | 日程查询（按日期/关键词/范围） | P1 | ✅ 已实现 | `life-assistant/src/scheduler.py` |
+| LIFE-03 | 日程修改/删除 | P1 | ✅ 已实现 | `life-assistant/src/scheduler.py` |
+| LIFE-04 | 日程到期提醒推送 | P2 | ✅ 已实现 | `life-assistant/src/reminder.py` |
+| LIFE-05 | 健康数据记录（体重、步数、睡眠、心率等） | P1 | ✅ 已实现 | `life-assistant/src/health_tracker.py` |
+| LIFE-06 | 健康数据统计与可视化（日报/周报/月报） | P2 | ✅ 已实现 | `life-assistant/src/health_tracker.py` |
+| LIFE-07 | 健康趋势分析与建议 | P2 | ✅ 已实现 | `life-assistant/src/health_analyzer.py` |
+| LIFE-08 | 旅行规划（创建/行程/行李/打包） | P1 | ✅ 已实现 | `life-assistant/src/travel_planner.py` |
+| LIFE-09 | 锻炼规划（计划/训练/记录/历史） | P1 | ✅ 已实现 | `life-assistant/src/workout_planner.py` |
+| LIFE-10 | 工作管理（创建/状态/优先级/截止/备注） | P1 | ✅ 已实现 | `life-assistant/src/work_planner.py` |
+| LIFE-11 | 看板网页访问 | P2 | ✅ 已实现 | `life-assistant/src/__init__.py` |
+| LIFE-12 | 关键词路由（日程/健康/旅行/锻炼/工作/看板） | P1 | ✅ 已实现 | `callback_server.py:175-190` |
 
 ### 3.4 4号AI 文件管理助理
 
@@ -265,7 +299,9 @@
        │
        ├─ message_type == "text" ──┬─ 前缀 #5/#sys  → 5号AI sys-assistant process()
        │                           ├─ 前缀 #4/#file → 4号AI file-assistant process()
-       │                           ├─ 前缀 #3/#life → 3号AI life-assistant process()
+       │                           ├─ 前缀 #2/#office/#办公 → 2号AI process_office_text()
+       │                           ├─ 转PPT          → 2号AI process_office_text("转PPT")
+       │                           ├─ 日程/健康/旅行/锻炼/工作/看板 → 3号AI life-assistant process()
        │                           └─ 其他文本 → 1号AI process_message()
        │                                ├─ 天气/翻译/搜索/清空/提示词/知识库 → 直接回复
        │                                ├─ 身份问题 → 历史正则提取 → 回复
@@ -276,7 +312,7 @@
        └─ message_type == "file"  → document_handler (下载 → Word/Excel/PPT 处理)
 
 推理后端 (由 settings.yaml 决定):
-  ├─ backend=llama.cpp → localhost:8080 (llama-server + qwen3:4b)
+  ├─ backend=llama.cpp → localhost:8080 (llama-server + qwen2.5:7b)
   └─ backend=ollama    → localhost:11434 (ollama serve + ollama_model)
 ```
 
@@ -309,7 +345,7 @@
 |------|-----------|------|
 | Python | 3.12.x (macOS 原生或 Homebrew) | 运行时 |
 | llama.cpp | `~/llama.cpp/build/bin/llama-server` | 推理引擎 (Metal) |
-| qwen3:4b 模型 | `~/.local/lib/ollama/blobs/sha256-3e4cb1417446*` (5.8GB) | 推理模型 |
+| qwen2.5:7b 模型 | `~/.local/lib/ollama/blobs/sha256-2bada8a74506*` (4.4GB) | 推理模型 |
 | whisper.cpp | `shared/whisper.cpp/build/bin/whisper-cli` | 语音识别 |
 | cloudflared | Homebrew 安装 | HTTPS 隧道 |
 | ffmpeg | Homebrew 安装 | 音频格式转换 |
@@ -360,7 +396,10 @@
 │   │       ├── scheduler.py            # 日程管理
 │   │       ├── health_tracker.py       # 健康数据记录
 │   │       ├── health_analyzer.py      # 健康趋势分析
-│   │       └── reminder.py             # 到期提醒
+│   │       ├── reminder.py             # 到期提醒
+│   │       ├── travel_planner.py       # 旅行规划
+│   │       ├── workout_planner.py      # 锻炼规划
+│   │       └── work_planner.py         # 工作管理
 │   ├── file-assistant/                # 4号AI
 │   │   ├── venv-file/
 │   │   └── src/
@@ -417,7 +456,7 @@
 
 | 指标 | 当前值 | 说明 |
 |------|--------|------|
-| 模型推理 | qwen3:4b (5.8GB) | 推理模型参数 |
+| 模型推理 | qwen2.5:7b (4.4GB) | 推理模型参数 |
 | 上下文长度 | 4096 tokens | llama.cpp 配置 |
 | 回复 max_tokens | 1024 | 兼顾 reasoning 和 content |
 | API 超时 | 60 秒 | requests timeout |
@@ -452,9 +491,12 @@ bash scripts/restart_callback.sh            # 重启 Flask 回调服务
 | `设置提示词：你是幽默的助手` | 设置自定义提示词 |
 | `查看提示词` / `重置提示词` | 查看 / 删除自定义提示词 |
 | `查知识：<问题>` | 检索知识库 |
-| `#3 schedule add <时间> <事件>` / `#3 schedule list` / `#3 schedule del <id>` | 3号AI：日程管理 |
-| `#3 health record <类型> <数值>` / `#3 health report <日报/周报/月报>` | 3号AI：健康管理 |
-| `#3 help` | 3号AI：帮助 |
+| `日程 添加 明天10:00 开会` / `日程 列表` / `日程 删除 <id>` | 3号AI：日程管理 |
+| `健康 记录 <类型> <数值>` / `健康 报告 <日报/周报/月报>` | 3号AI：健康管理 |
+| `旅行 创建 <目的地> <开始>` / `旅行 列表` | 3号AI：旅行规划 |
+| `锻炼 创建 <名称>` / `锻炼 列表` / `锻炼 记录 <id>` | 3号AI：锻炼规划 |
+| `工作 创建 <标题>` / `工作 列表` / `工作 开始 <id>` | 3号AI：工作管理 |
+| `看板` | 3号AI：打开网页看板 |
 | `查看 <路径>` / `搜索 <关键词>` / `信息 <路径>` | 4号AI：文件查看/搜索 |
 | `复制 <源> <目标>` / `移动 <源> <目标>` / `重命名 <路径> <新名>` | 4号AI：文件操作 |
 | `删除 <路径1> [路径2 ...]` | 4号AI：批量移入回收站 |
@@ -466,8 +508,8 @@ bash scripts/restart_callback.sh            # 重启 Flask 回调服务
 | `#5 ps list` / `#5 ps kill <pid>` | 5号AI：进程管理 |
 | `#5 log <name> [lines]` / `#5 log search <keyword>` | 5号AI：日志查看 |
 | `#5 backup now` / `#5 backup list` / `#5 backup restore <id>` | 5号AI：备份管理 |
-| `#2 help` | 2号AI：帮助 |
-| `#2 ppt <文案>` / `#2 生成ppt：<文案>` | 2号AI：根据文案生成专业级 PPT（支持 `##` 章节、`-` 要点、`左|右` 双栏） |
+| `#办公 help` / `#办公 ppt <文案>` | 2号AI：办公帮助 / 生成 PPT |
+| `转PPT` | 2号AI：将上次分析文档转为 PPT |
 | `#5 help` | 5号AI：帮助 |
 | `clear` | 清空对话历史 |
 
@@ -478,13 +520,16 @@ bash scripts/restart_callback.sh            # 重启 Flask 回调服务
 | `chat-assistant/src/message_handler.py` | `process_message(text, target_id, open_id)` |
 | `chat-assistant/src/main.py` | `talk(messages, open_id="")` → 回复文本 |
 | `chat-assistant/src/voice_handler.py` | `process_voice_message(file_key, msg_id, open_id)` |
-| `office-assistant/src/document_handler.py` | `process_document_file(file_key, msg_id, open_id, filename)` — 文档分析 + `process_office_text(cmd, open_id, target_id, rtype)` — #2 命令处理，v3.0 新增 PPT 支持 |
+| `office-assistant/src/document_handler.py` | `process_document_file(file_key, msg_id, open_id, filename)` — 文档分析 + `process_office_text(cmd, open_id, target_id, rtype)` — #办公 命令处理，v3.0 新增 PPT 支持 |
 | `office-assistant/src/core/ppt_generator.py` | `generate_presentation(title, slides, path)` |
 | `office-assistant/src/core/folder_monitor.py` | `start_monitor(dir, cb)` / `stop_monitor()` |
 | `life-assistant/src/scheduler.py` | `schedule_add(time, event)`, `schedule_list(date)`, `schedule_del(id)` |
 | `life-assistant/src/health_tracker.py` | `record_health(type, value)`, `health_report(period)` |
 | `life-assistant/src/health_analyzer.py` | `analyze_trend(period)` → 趋势分析 |
 | `life-assistant/src/reminder.py` | `check_reminders()` → 到期推送 |
+| `life-assistant/src/travel_planner.py` | `create(dest, start)`, `list_trips()`, `view(id)`, `add_activity()`, `pack_item()` — 旅行规划 |
+| `life-assistant/src/workout_planner.py` | `create(name)`, `list_plans()`, `view(id)`, `add_exercise()`, `log_workout()` — 锻炼规划 |
+| `life-assistant/src/work_planner.py` | `create(title)`, `list_items()`, `set_status()`, `set_priority()` — 工作管理 |
 | `file-assistant/src/__init__.py` | `process(text, open_id)` → 中文命令解析/分发/校验 |
 | `file-assistant/src/file_manager.py` | `cmd_ls(path)`, `cmd_find(name)`, `cmd_cat(path)`(含图片/PDF预览), `cmd_cp(src,dst)`, `cmd_mv(src,dst)`, `cmd_trash(path)`, `cmd_mkdir(path)` |
 | `file-assistant/src/file_transfer.py` | `cmd_share(path, target_id)` → 通过飞书发送文件 |
@@ -540,6 +585,9 @@ python3 scripts/diagnose.py     # 环境核验
 - 推理进程内存超限 8GB 自动重启
 - 飞书凭证在 `shared/feishu-bot/.env`（不得提交）
 - `opencode.json` 配置：`provider: openai`, `apiBase: http://localhost:8080/v1`
+- 2号AI 改用 `#办公` 前缀（替代 `#2`/`#office`），`转PPT` 可直接发送无需前缀
+- 3号AI 改用中文关键词路由（日程/健康/旅行/锻炼/工作/看板），替代 `#3`/`#life` 前缀
+- 回复格式简化：无思考过程、无分隔线、时间直接放在问题/回答前
 
 ## 文件访问隔离
 

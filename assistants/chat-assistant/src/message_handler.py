@@ -32,12 +32,10 @@ def _now_str():
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 def _quote_reply_header(user_text, reply, question_time=None):
-    """在回复前引用提问，添加时间戳"""
     qtime = question_time or _now_str()
     rtime = _now_str()
-    header = f"📅 提问时间：{qtime}\n你：{user_text[:200]}"
-    divider = "\n" + "━" * 20
-    return f"{header}{divider}\n\n{reply}{divider}\n⏱️ 回复时间：{rtime}"
+    header = f"{qtime}\n{user_text[:200]}"
+    return f"{header}\n\n{rtime}\n{reply}"
 
 # 尝试导入 talk，失败时提供降级
 try:
@@ -52,71 +50,19 @@ except ImportError:
 
 MAX_HISTORY_TURNS = 10
 
-_HELP_TEXT = """🤖 **AI 助手使用指南**
+_HELP_TEXT = """🤖 **AI 使用指南**
 
-━━━━ 1号AI · 闲聊助理 ━━━━
-直接发送任意文字即可聊天，支持：
+1️⃣ **闲聊** — 直接聊天即可
+天气/翻译/搜索/查知识/提示词/clear
 
-🌤️ 天气查询
-  「北京今天天气」「西安下雨吗」
-  → 自动识别城市，默认北京
+2️⃣ **办公** — 发 #办公 命令或直接发文件
+#办公 ppt <文案> | 转PPT 转上次文档
+文件自动分析(docx/xlsx/pptx)
 
-🌐 中英翻译
-  「翻译：Hello World」
-  → 自动翻译为中文
+3️⃣ **日程健康** — #3 或 #life
+schedule add/list/del · health record/report
 
-🔍 网络搜索
-  「搜索 最近的科技新闻」
-  → Bing 搜索结果
-
-📚 知识库检索
-  「查知识：佛法修行要点」
-  → 从私有知识库检索（支持 .txt 导入）
-
-🧠 自定义提示词
-  「设置提示词：你是一位幽默的段子手」
-  「查看提示词」/「重置提示词」
-
-🗑️ 清空记忆
-  「clear」→ 清空 10 轮对话历史
-
-━━━━ 2号AI · 办公助理 ━━━━
-使用 #2 或 #office 前缀：
-
-📎 文档处理（直接发送文件）
-  .docx → 自动提取摘要 + 支持转 PPT
-  .xlsx → 数据分析 + AI 摘要
-  .pptx → 提取幻灯片内容
-
-📊 PPT 生成
-  「#2 ppt <文案>」
-  「#2 生成ppt：<文案>」
-  支持 ## 章节 / - 要点 / 左|右 双栏
-
-📄 文档转 PPT
-  「#2 toppt」或「#2 转ppt」
-  → 将上次发送的文档转为 PPT
-
-━━━━ 3号AI · 日程健康 ━━━━
-使用 #3 或 #life 前缀：
-
-📅 日程管理
-  「#3 schedule add 明天10:00 开会」
-  「#3 schedule list」查看当天日程
-  「#3 schedule del <id>」删除
-
-💪 健康记录
-  「#3 health record 体重 70」
-  「#3 health record 步数 8000」
-  「#3 health report 周报」
-
-⏰ 到期提醒（自动推送）
-
-━━━━ 使用提示 ━━━━
-• 各类查询直接说即可，无需前缀
-• #2/#3 开头的命令发给 1号 Bot
-• 发送文件自动分析，支持 Word/Excel/PPT
-• 有疑问说「help」或「你能帮我做什么」
+💡 文件自动分析 · help 查看完整帮助
 """.strip()
 
 
@@ -289,6 +235,15 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
         weather_keywords = ["天气","气温","下雨","下雪","风力","湿度","温度","几度","气候"]
         if any(kw in user_text for kw in weather_keywords):
             import re
+            # 识别时间偏移
+            day_offset = 0
+            if "后天" in user_text:
+                day_offset = 2
+            elif "明天" in user_text or "明晚" in user_text:
+                day_offset = 1
+            elif "今天" in user_text or "现在" in user_text or "当前" in user_text:
+                day_offset = 0
+            # 提取城市
             city = None
             patterns = [
                 r'(.+?)今天的天气', r'(.+?)明天的天气',
@@ -304,16 +259,31 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
                 city = normalize_city_for_weather(user_text)
             if not city:
                 city = get_city_from_config_or_default()
-            weather_result = get_weather(city)
+            weather_result = get_weather(city, day_offset=day_offset)
             if isinstance(weather_result, dict):
                 if weather_result.get('error'):
                     reply = weather_result['error']
                 else:
-                    reply = (
-                        f"{weather_result.get('city', city)}当前天气：{weather_result.get('description', '')}，"
-                        f"温度{weather_result.get('temp_c', '')}°C，湿度{weather_result.get('humidity', '')}%，"
-                        f"风速{weather_result.get('wind_speed', '')} km/h"
-                    )
+                    desc_cn = weather_result.get('description', '')
+                    desc_en = weather_result.get('description_en', '')
+                    desc_str = f"{desc_cn}（{desc_en}）" if desc_en and desc_en.lower() != desc_cn.lower() else desc_cn
+                    city_cn = weather_result.get('city_cn', '') or weather_result.get('city', city)
+                    city_en = weather_result.get('city_en', '')
+                    city_str = f"{city_cn}（{city_en}）" if city_en and city_en.lower() != city_cn.lower() else city_cn
+                    weekday = weather_result.get('weekday', '')
+                    date_str = weather_result.get('date', '')
+                    if weather_result.get('type') == 'forecast':
+                        time_label = {0: "今天", 1: "明天", 2: "后天"}.get(day_offset, "")
+                        reply = (
+                            f"{city_str} {time_label}（{weekday}）{date_str}：{desc_str}，"
+                            f"最高{weather_result.get('temp_max', '')}°C，最低{weather_result.get('temp_min', '')}°C"
+                        )
+                    else:
+                        reply = (
+                            f"{city_str} 当前（{weekday}）{date_str}：{desc_str}，"
+                            f"温度{weather_result.get('temp_c', '')}°C，湿度{weather_result.get('humidity', '')}%，"
+                            f"风速{weather_result.get('wind_speed', '')} km/h"
+                        )
             else:
                 reply = weather_result
             send_message(target_id, reply, receive_id_type=receive_id_type)
@@ -358,8 +328,7 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
             except Exception:
                 pass
 
-            # 发送"正在思考"中间态
-            _thinking_msg_id = send_message(target_id, "🤔 正在思考…", receive_id_type=receive_id_type)
+            _thinking_msg_id = None
 
             chat_messages = list(history)
             if kb_context:
@@ -383,7 +352,7 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
                 if total_turns > MAX_HISTORY_TURNS:
                     total_turns = 1
                 _save_counter(uid, total_turns)
-                reply += f"\n\n⏳ 已记忆 {total_turns}/{MAX_HISTORY_TURNS} 轮"
+                reply += f"\n⏳ 已记忆 {total_turns}/{MAX_HISTORY_TURNS} 轮"
 
             # 引用提问 + 时间戳头
             display_reply = _quote_reply_header(user_text, reply, question_time=question_time)

@@ -20,7 +20,7 @@ load_dotenv(_env_path)
 
 APP_ID = os.getenv("FEISHU_APP_ID")
 APP_SECRET = os.getenv("FEISHU_APP_SECRET")
-MODEL_NAME = "qwen3:4b"
+MODEL_NAME = "qwen2.5:7b"
 
 import requests
 

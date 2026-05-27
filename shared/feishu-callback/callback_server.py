@@ -158,19 +158,24 @@ def handle_event(data: dict):
             target_id = chat_id if chat_id else open_id
             receive_id_type = "chat_id" if chat_id else "open_id"
             logger.info(f"📩 用户 {open_id} 在 {receive_id_type} {target_id} 说: {user_text}")
-            # 2号AI 办公助理（前缀 #2 / #office）
-            if user_text.startswith("#2 ") or user_text.startswith("#office ") or user_text == "#2" or user_text == "#office":
+            # 2号AI 办公助理（前缀 #2 / #office / #办公，或直接发 转PPT）
+            if any(user_text.startswith(p) for p in ("#2 ", "#office ", "#办公 ")) or user_text in ("#2", "#office", "#办公"):
                 from assistants.office_assistant.src.document_handler import process_office_text
-                cmd = user_text[3:].strip() if user_text.startswith("#2") else user_text[7:].strip()
-                process_office_text(cmd, open_id, target_id=target_id, receive_id_type=receive_id_type)
-                return
-            # 3号AI 日程健康助理（前缀 #3 / #life）
-            if user_text.startswith("#3 ") or user_text.startswith("#life ") or user_text == "#3" or user_text == "#life":
                 cmd = user_text
-                for prefix in ["#3 ", "#life ", "#3", "#life"]:
+                for prefix in ["#2 ", "#office ", "#办公 ", "#2", "#office", "#办公"]:
                     if cmd.startswith(prefix):
                         cmd = cmd[len(prefix):].strip()
                         break
+                process_office_text(cmd, open_id, target_id=target_id, receive_id_type=receive_id_type)
+                return
+            if user_text == "转PPT" or user_text.startswith("转PPT "):
+                from assistants.office_assistant.src.document_handler import process_office_text
+                process_office_text("转PPT", open_id, target_id=target_id, receive_id_type=receive_id_type)
+                return
+            # 3号AI 生活助手（中文命令：日程/健康/旅行/锻炼/工作/帮助/看板）
+            life_keywords = ("日程", "健康", "旅行", "锻炼", "工作", "帮助", "看板")
+            if any(user_text.startswith(k) or user_text == k for k in life_keywords):
+                cmd = user_text
                 from life_assistant.src import process as process_life
                 import yaml
                 try:
@@ -218,4 +223,10 @@ def handle_event(data: dict):
 
 if __name__ == "__main__":
     logger.info("🚀 启动飞书回调服务（模块化重构）")
-    app.run(host="0.0.0.0", port=5101, debug=False)
+    import yaml
+    try:
+        cfg = yaml.safe_load((PROJECT_ROOT / "config" / "settings.yaml").read_text())
+        port = cfg.get("callback_port", 5101)
+    except Exception:
+        port = 5101
+    app.run(host="0.0.0.0", port=port, debug=False)

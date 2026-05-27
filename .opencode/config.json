@@ -3,18 +3,31 @@
   "provider": {
     "local": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "本地模型",
+      "name": "本地模型 (Ollama)",
       "options": {
         "baseURL": "http://127.0.0.1:11434/v1",
         "apiKey": "EMPTY"
       },
       "models": {
         "qwen3:4b": {
-          "name": "qwen3:4b",
+          "name": "qwen3:4b"
+        }
+      }
+    },
+    "free-api-hub": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Free API Hub",
+      "options": {
+        "baseURL": "http://127.0.0.1:5080/v1",
+        "apiKey": "sk-placeholder"
+      },
+      "models": {
+        "default": {
+          "name": "智能路由 (硅基流动→智谱→OpenRouter)",
           "systemPrompt": "你全程必须使用中文回复，代码注释、问题解释、所有内容均使用中文，不要使用英文。"
         }
       }
     }
   },
-  "model": "local/qwen3:4b"
+  "model": "free-api-hub/default"
 }

@@ -16,59 +16,54 @@ from .work_planner import (
     set_status, set_priority, set_deadline, set_notes, delete as work_del,
 )
 
-HELP_TEXT = """🤖 3号AI 生活助手
+HELP_TEXT = """🤖 生活助手
 📅 日程管理：
-  #3 schedule add <时间> <事件>  — 创建日程
-  #3 schedule list [日期]         — 查看日程
-  #3 schedule del <id>            — 删除日程
-  #3 schedule search <关键词>     — 搜索日程
+  日程 添加 <时间> <事件>           — 创建日程
+  日程 列表 [日期]                  — 查看日程
+  日程 删除 <id>                    — 删除日程
+  日程 搜索 <关键词>                — 搜索日程
 🏥 健康管理：
-  #3 health record <类型> <数值>  — 记录数据
-  #3 health report <日报/周报/月报> — 查看报告
-  #3 health trend <类型>          — 趋势分析
+  健康 记录 <类型> <数值>           — 记录数据
+  健康 报告 <日报/周报/月报>        — 查看报告
+  健康 趋势 <类型>                  — 趋势分析
 🗺️ 旅行规划：
-  #3 travel create <目的地> <开始> [结束]  — 创建旅行
-  #3 travel list                           — 查看所有旅行
-  #3 travel view <id>                      — 查看旅行详情
-  #3 travel add <id> <活动>               — 添加行程活动
-  #3 travel del_activity <id> <序号>       — 删除活动
-  #3 travel pack <id> <物品>               — 添加行李
-  #3 travel pack_check <id> <关键词>        — 打包/取消打包
-  #3 travel del <id>                        — 删除整个旅行
-
+  旅行 创建 <目的地> <开始> [结束]  — 创建旅行
+  旅行 列表                         — 查看所有旅行
+  旅行 查看 <id>                    — 查看旅行详情
+  旅行 添加 <id> <活动>             — 添加行程活动
+  旅行 删除活动 <id> <序号>         — 删除活动
+  旅行 行李 <id> <物品>             — 添加行李
+  旅行 打包 <id> <关键词>            — 打包/取消打包
+  旅行 删除 <id>                    — 删除整个旅行
 🏋️ 锻炼规划：
-  #3 workout create <名称>                 — 创建锻炼计划
-  #3 workout list                          — 查看所有计划
-  #3 workout view <id>                     — 查看计划详情
-  #3 workout add <id> <动作> <组数>x<次数> — 添加训练项目
-  #3 workout log <id> [备注]               — 记录一次训练
-  #3 workout history <id>                  — 查看训练历史
-  #3 workout del <id>                       — 删除计划
+  锻炼 创建 <名称>                  — 创建锻炼计划
+  锻炼 列表                         — 查看所有计划
+  锻炼 查看 <id>                    — 查看计划详情
+  锻炼 添加 <id> <动作> <组数>x<次数> — 添加训练项目
+  锻炼 记录 <id> [备注]             — 记录一次训练
+  锻炼 历史 <id>                    — 查看训练历史
+  锻炼 删除 <id>                    — 删除计划
 📋 工作规划：
-  #3 work create <标题>                    — 创建工作项
-  #3 work list [todo/doing/done]           — 查看工作列表
-  #3 work view <id>                        — 查看详情
-  #3 work start <id>                       — 开始做
-  #3 work done <id>                        — 标记完成
-  #3 work reopen <id>                      — 重新打开
-  #3 work priority <id> <高/中/低>          — 设置优先级
-  #3 work deadline <id> <日期>             — 设置截止
-  #3 work note <id> <备注>                 — 添加备注
-  #3 work del <id>                          — 删除
+  工作 创建 <标题>                  — 创建工作项
+  工作 列表 [待办/进行中/已完成]    — 查看工作列表
+  工作 查看 <id>                    — 查看详情
+  工作 开始 <id>                    — 开始做
+  工作 完成 <id>                    — 标记完成
+  工作 重开 <id>                    — 重新打开
+  工作 优先级 <id> <高/中/低>       — 设置优先级
+  工作 截止 <id> <日期>             — 设置截止
+  工作 备注 <id> <备注>             — 添加备注
+  工作 删除 <id>                    — 删除
 🗄️ 网页看板：
-  #3 dashboard                             — 打开网页看板
-❓ #3 help  — 显示此帮助"""
+  看板                              — 打开网页看板
+❓ 帮助   — 显示此帮助"""
 
 
 def process(text, open_id="", dashboard_url=""):
     text = text.strip()
-    for prefix in ["#3 ", "#life ", "#3", "#life"]:
-        if text.startswith(prefix):
-            text = text[len(prefix):].strip()
-            break
-    if not text or text == "help":
+    if not text or text == "帮助":
         return HELP_TEXT
-    if text == "dashboard":
+    if text == "看板":
         if dashboard_url:
             return f"📊 网页看板已开启：\n{dashboard_url}\n\n建议在手机浏览器或飞书中打开查看。"
         return "📊 网页看板地址未配置，请联系管理员设置 dashboard_url。"
@@ -77,15 +72,15 @@ def process(text, open_id="", dashboard_url=""):
     cmd = parts[0]
     args = parts[1:] if len(parts) > 1 else []
 
-    if cmd == "schedule":
+    if cmd == "日程":
         return _handle_schedule(args)
-    elif cmd == "health":
+    elif cmd == "健康":
         return _handle_health(args)
-    elif cmd == "travel":
+    elif cmd == "旅行":
         return _handle_travel(args)
-    elif cmd == "workout":
+    elif cmd == "锻炼":
         return _handle_workout(args)
-    elif cmd == "work":
+    elif cmd == "工作":
         return _handle_work(args)
     else:
         return f"❌ 未知命令：{cmd}\n\n{HELP_TEXT}"
@@ -93,30 +88,30 @@ def process(text, open_id="", dashboard_url=""):
 
 def _handle_schedule(args):
     if not args:
-        return "📋 用法：\n  #3 schedule add <时间> <事件>\n  #3 schedule list [日期]\n  #3 schedule del <id>\n  #3 schedule search <关键词>"
+        return "📋 用法：\n  日程 添加 <时间> <事件>\n  日程 列表 [日期]\n  日程 删除 <id>\n  日程 搜索 <关键词>"
     sub = args[0]
     rest = args[1:]
 
-    if sub == "add":
+    if sub in ("添加", "add"):
         if len(rest) < 2:
-            return "❌ 格式：#3 schedule add <时间> <事件>\n  示例：#3 schedule add 2026-05-27 14:00 开会"
+            return "❌ 格式：日程 添加 <时间> <事件>\n  示例：日程 添加 2026-05-27 14:00 开会"
         time_str = rest[0]
         title = " ".join(rest[1:])
         item = sched_add(title, time_str)
         return f"✅ 已创建日程：\n  [{item['id']}] {item['time']} {item['title']}"
 
-    elif sub == "list":
+    elif sub in ("列表", "list"):
         date_str = rest[0] if rest else None
         return sched_list(date_str)
 
-    elif sub == "del":
+    elif sub in ("删除", "del"):
         if not rest:
-            return "❌ 格式：#3 schedule del <id>"
+            return "❌ 格式：日程 删除 <id>"
         return sched_del(rest[0])
 
-    elif sub == "search":
+    elif sub in ("搜索", "search"):
         if not rest:
-            return "❌ 格式：#3 schedule search <关键词>"
+            return "❌ 格式：日程 搜索 <关键词>"
         return sched_search(" ".join(rest))
 
     else:
@@ -125,22 +120,22 @@ def _handle_schedule(args):
 
 def _handle_health(args):
     if not args:
-        return "🏥 用法：\n  #3 health record <类型> <数值>\n  #3 health report <日报/周报/月报>\n  #3 health trend <类型>"
+        return "🏥 用法：\n  健康 记录 <类型> <数值>\n  健康 报告 <日报/周报/月报>\n  健康 趋势 <类型>"
     sub = args[0]
     rest = args[1:]
 
-    if sub == "record":
+    if sub in ("记录", "record"):
         if len(rest) < 2:
-            return f"❌ 格式：#3 health record <类型> <数值>\n  类型：{', '.join(TYPES.keys())}"
+            return f"❌ 格式：健康 记录 <类型> <数值>\n  类型：{', '.join(TYPES.keys())}"
         return health_record(rest[0], rest[1])
 
-    elif sub == "report":
+    elif sub in ("报告", "report"):
         period = rest[0] if rest else "日报"
         return health_report(period)
 
-    elif sub == "trend":
+    elif sub in ("趋势", "trend"):
         if not rest:
-            return "❌ 格式：#3 health trend <类型>"
+            return "❌ 格式：健康 趋势 <类型>"
         return analyze_trend(rest[0])
 
     else:
@@ -149,54 +144,54 @@ def _handle_health(args):
 
 def _handle_travel(args):
     if not args:
-        return "🗺️ 用法：\n  #3 travel create <目的地> <开始> [结束]\n  #3 travel list\n  #3 travel view <id>\n  #3 travel add <id> <活动>\n  #3 travel del_activity <id> <序号>\n  #3 travel pack <id> <物品>\n  #3 travel pack_check <id> <关键词>\n  #3 travel del <id>"
+        return "🗺️ 用法：\n  旅行 创建 <目的地> <开始> [结束]\n  旅行 列表\n  旅行 查看 <id>\n  旅行 添加 <id> <活动>\n  旅行 删除活动 <id> <序号>\n  旅行 行李 <id> <物品>\n  旅行 打包 <id> <关键词>\n  旅行 删除 <id>"
     sub = args[0]
     rest = args[1:]
 
-    if sub == "create":
+    if sub in ("创建", "create"):
         if len(rest) < 2:
-            return "❌ 格式：#3 travel create <目的地> <开始日期> [结束日期]"
+            return "❌ 格式：旅行 创建 <目的地> <开始日期> [结束日期]"
         dest = rest[0]
         start = rest[1]
         end = rest[2] if len(rest) > 2 else ""
         trip = trip_create(dest, start, end)
         return f"✅ 已创建旅行计划：{trip['destination']}（{trip['start_date']} ~ {trip.get('end_date', '')}）\n  ID：{trip['id']}"
 
-    elif sub == "list":
+    elif sub in ("列表", "list"):
         return list_trips()
 
-    elif sub == "view":
+    elif sub in ("查看", "view"):
         if not rest:
-            return "❌ 格式：#3 travel view <id>"
+            return "❌ 格式：旅行 查看 <id>"
         return trip_view(rest[0])
 
-    elif sub == "add":
+    elif sub in ("添加", "add"):
         if len(rest) < 2:
-            return "❌ 格式：#3 travel add <id> <活动描述>"
+            return "❌ 格式：旅行 添加 <id> <活动描述>"
         return add_activity(rest[0], " ".join(rest[1:]))
 
-    elif sub == "del_activity":
+    elif sub in ("删除活动", "del_activity"):
         if len(rest) < 2:
-            return "❌ 格式：#3 travel del_activity <id> <序号>"
+            return "❌ 格式：旅行 删除活动 <id> <序号>"
         try:
             idx = int(rest[1])
         except ValueError:
             return "❌ 序号必须是数字"
         return delete_activity(rest[0], idx)
 
-    elif sub == "pack":
+    elif sub in ("行李", "pack"):
         if len(rest) < 2:
-            return "❌ 格式：#3 travel pack <id> <物品>"
+            return "❌ 格式：旅行 行李 <id> <物品>"
         return pack_item(rest[0], " ".join(rest[1:]))
 
-    elif sub == "pack_check":
+    elif sub in ("打包", "pack_check"):
         if len(rest) < 2:
-            return "❌ 格式：#3 travel pack_check <id> <关键词>"
+            return "❌ 格式：旅行 打包 <id> <关键词>"
         return toggle_pack(rest[0], " ".join(rest[1:]))
 
-    elif sub == "del":
+    elif sub in ("删除", "del"):
         if not rest:
-            return "❌ 格式：#3 travel del <id>"
+            return "❌ 格式：旅行 删除 <id>"
         return trip_del(rest[0])
 
     else:
@@ -205,55 +200,53 @@ def _handle_travel(args):
 
 def _handle_workout(args):
     if not args:
-        return "🏋️ 用法：\n  #3 workout create <名称>\n  #3 workout list\n  #3 workout view <id>\n  #3 workout add <id> <动作> <组数>x<次数>\n  #3 workout log <id> [备注]\n  #3 workout history <id>\n  #3 workout del <id>"
+        return "🏋️ 用法：\n  锻炼 创建 <名称>\n  锻炼 列表\n  锻炼 查看 <id>\n  锻炼 添加 <id> <动作> <组数>x<次数>\n  锻炼 记录 <id> [备注]\n  锻炼 历史 <id>\n  锻炼 删除 <id>"
     sub = args[0]
     rest = args[1:]
 
-    if sub == "create":
+    if sub in ("创建", "create"):
         if not rest:
-            return "❌ 格式：#3 workout create <名称>"
+            return "❌ 格式：锻炼 创建 <名称>"
         plan = wp_create(" ".join(rest))
         return f"✅ 已创建锻炼计划：{plan['name']}\n  ID：{plan['id']}"
 
-    elif sub == "list":
+    elif sub in ("列表", "list"):
         return list_plans()
 
-    elif sub == "view":
+    elif sub in ("查看", "view"):
         if not rest:
-            return "❌ 格式：#3 workout view <id>"
+            return "❌ 格式：锻炼 查看 <id>"
         return wp_view(rest[0])
 
-    elif sub == "add":
+    elif sub in ("添加", "add"):
         if len(rest) < 2:
-            return "❌ 格式：#3 workout add <id> <动作> <组数>x<次数>\n  示例：#3 workout add abc123 深蹲 3x12"
-        # Parse "深蹲 3x12" style
+            return "❌ 格式：锻炼 添加 <id> <动作> <组数>x<次数>\n  示例：锻炼 添加 abc123 深蹲 3x12"
         plan_id = rest[0]
         exercise_str = " ".join(rest[1:])
-        # Try to find a "NxM" pattern
         import re
         m = re.search(r'(\d+)x(\d+)', exercise_str)
         if not m:
-            return "❌ 格式：#3 workout add <id> <动作> <组数>x<次数>\n  示例：#3 workout add abc123 深蹲 3x12"
+            return "❌ 格式：锻炼 添加 <id> <动作> <组数>x<次数>\n  示例：锻炼 添加 abc123 深蹲 3x12"
         sets, reps = m.group(1), m.group(2)
         name = exercise_str[:m.start()].strip()
         if not name:
-            return "❌ 格式：#3 workout add <id> <动作> <组数>x<次数>\n  示例：#3 workout add abc123 深蹲 3x12"
+            return "❌ 格式：锻炼 添加 <id> <动作> <组数>x<次数>\n  示例：锻炼 添加 abc123 深蹲 3x12"
         return add_exercise(plan_id, name, sets, reps)
 
-    elif sub == "log":
+    elif sub in ("记录", "log"):
         if not rest:
-            return "❌ 格式：#3 workout log <id> [备注]"
+            return "❌ 格式：锻炼 记录 <id> [备注]"
         note = " ".join(rest[1:]) if len(rest) > 1 else ""
         return log_workout(rest[0], note)
 
-    elif sub == "history":
+    elif sub in ("历史", "history"):
         if not rest:
-            return "❌ 格式：#3 workout history <id>"
+            return "❌ 格式：锻炼 历史 <id>"
         return wp_history(rest[0])
 
-    elif sub == "del":
+    elif sub in ("删除", "del"):
         if not rest:
-            return "❌ 格式：#3 workout del <id>"
+            return "❌ 格式：锻炼 删除 <id>"
         return wp_del(rest[0])
 
     else:
@@ -262,60 +255,62 @@ def _handle_workout(args):
 
 def _handle_work(args):
     if not args:
-        return "📋 用法：\n  #3 work create <标题>\n  #3 work list [todo/doing/done]\n  #3 work view <id>\n  #3 work start <id>\n  #3 work done <id>\n  #3 work reopen <id>\n  #3 work priority <id> <高/中/低>\n  #3 work deadline <id> <日期>\n  #3 work note <id> <备注>\n  #3 work del <id>"
+        return "📋 用法：\n  工作 创建 <标题>\n  工作 列表 [待办/进行中/已完成]\n  工作 查看 <id>\n  工作 开始 <id>\n  工作 完成 <id>\n  工作 重开 <id>\n  工作 优先级 <id> <高/中/低>\n  工作 截止 <id> <日期>\n  工作 备注 <id> <备注>\n  工作 删除 <id>"
     sub = args[0]
     rest = args[1:]
 
-    if sub == "create":
+    if sub in ("创建", "create"):
         if not rest:
-            return "❌ 格式：#3 work create <标题>"
+            return "❌ 格式：工作 创建 <标题>"
         item = work_create(" ".join(rest))
         return f"✅ 已创建工作项：{item['title']}（{item['id']}）"
 
-    elif sub == "list":
+    elif sub in ("列表", "list"):
         status = rest[0] if rest else None
-        if status and status not in ("todo", "doing", "done", "all"):
-            return "❌ 支持：todo / doing / done / all（留空=全部）"
-        return work_list(status)
+        status_map = {"待办": "todo", "进行中": "doing", "已完成": "done", "全部": "all",
+                      "todo": "todo", "doing": "doing", "done": "done", "all": "all"}
+        if status and status not in status_map:
+            return "❌ 支持：待办 / 进行中 / 已完成 / 全部（留空=全部）"
+        return work_list(status_map.get(status, status))
 
-    elif sub == "view":
+    elif sub in ("查看", "view"):
         if not rest:
-            return "❌ 格式：#3 work view <id>"
+            return "❌ 格式：工作 查看 <id>"
         return work_view(rest[0])
 
-    elif sub == "start":
+    elif sub in ("开始", "start"):
         if not rest:
-            return "❌ 格式：#3 work start <id>"
+            return "❌ 格式：工作 开始 <id>"
         return set_status(rest[0], "doing")
 
-    elif sub == "done":
+    elif sub in ("完成", "done"):
         if not rest:
-            return "❌ 格式：#3 work done <id>"
+            return "❌ 格式：工作 完成 <id>"
         return set_status(rest[0], "done")
 
-    elif sub == "reopen":
+    elif sub in ("重开", "reopen"):
         if not rest:
-            return "❌ 格式：#3 work reopen <id>"
+            return "❌ 格式：工作 重开 <id>"
         return set_status(rest[0], "todo")
 
-    elif sub == "priority":
+    elif sub in ("优先级", "priority"):
         if len(rest) < 2:
-            return "❌ 格式：#3 work priority <id> <高/中/低>"
+            return "❌ 格式：工作 优先级 <id> <高/中/低>"
         return set_priority(rest[0], rest[1])
 
-    elif sub == "deadline":
+    elif sub in ("截止", "deadline"):
         if len(rest) < 2:
-            return "❌ 格式：#3 work deadline <id> <日期>"
+            return "❌ 格式：工作 截止 <id> <日期>"
         return set_deadline(rest[0], rest[1])
 
-    elif sub == "note":
+    elif sub in ("备注", "note"):
         if len(rest) < 2:
-            return "❌ 格式：#3 work note <id> <备注>"
+            return "❌ 格式：工作 备注 <id> <备注>"
         return set_notes(rest[0], " ".join(rest[1:]))
 
-    elif sub == "del":
+    elif sub in ("删除", "del"):
         if not rest:
-            return "❌ 格式：#3 work del <id>"
+            return "❌ 格式：工作 删除 <id>"
         return work_del(rest[0])
 
     else:

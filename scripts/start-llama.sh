@@ -1,7 +1,7 @@
 #!/bin/bash
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT="$(dirname "$SCRIPT_DIR")"
-MODEL_FILE=$(find ~/.local/lib/ollama/blobs -name "sha256-3e4cb1417446*" -size +1G | head -1)
+MODEL_FILE=$(find ~/.local/lib/ollama/blobs -name "sha256-2bada8a74506*" -size +1G | head -1)
 lsof -ti:8080 | xargs kill -9 2>/dev/null
 sleep 1
 nohup ~/llama.cpp/build/bin/llama-server \

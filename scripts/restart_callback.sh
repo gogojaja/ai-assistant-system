@@ -1,5 +1,5 @@
 #!/bin/bash
-# 单独重启测试环境飞书回调服务（:5101）
+# 单独重启测试环境飞书回调服务
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT"

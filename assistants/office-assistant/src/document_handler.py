@@ -174,7 +174,7 @@ def _extract_pptx_text(file_path: str) -> dict:
 
 
 # 文档内容缓存：open_id → {"text": str, "title": str}
-# 用于 toppt 命令将上次分析的文档转 PPT
+# 用于 转PPT 命令将上次分析的文档转 PPT
 _doc_cache: dict = {}
 
 
@@ -187,16 +187,15 @@ def _cache_doc_text(open_id: str, text: str, title: str = "文档内容"):
 
 _OFFICE_HELP = """
 📋 2号AI 办公助理 — 可用命令：
-  #2 help            — 显示此帮助
-  #2 ppt <文案>       — 根据文案生成 PPT
-  #2 生成ppt：<文案>   — 同上
-  #2 toppt            — 将上次分析的文档转为 PPT
-  #2 转ppt            — 同上
+  #办公 help            — 显示此帮助
+  #办公 ppt <文案>       — 根据文案生成 PPT
+  #办公 生成ppt：<文案>   — 同上
+  #办公 转PPT            — 将上次分析的文档转为 PPT（或直接发 转PPT）
 
 📎 发送文件即可分析：
-  .docx → 提取摘要 + 支持 #2 toppt 转 PPT
+  .docx → 提取摘要 + 支持 转PPT
   .xlsx → 数据分析 + AI 摘要
-  .pptx → 提取幻灯片内容 + 支持 #2 toppt 转 PPT
+  .pptx → 提取幻灯片内容 + 支持 转PPT
 """.strip()
 
 
@@ -244,7 +243,7 @@ def process_office_text(cmd_text: str, open_id: str, target_id: str = "", receiv
         return
 
     # toppt / 转ppt：从缓存的上次文档生成 PPT
-    if cmd_text in ("toppt", "转ppt"):
+    if cmd_text in ("转PPT",):
         cached = _doc_cache.get(open_id)
         if not cached or not cached["text"].strip():
             send_message(target_id or open_id, "没有找到已分析的文档。请先发送 .docx 或 .pptx 文件。", receive_id_type=receive_id_type)
@@ -324,7 +323,7 @@ def process_document_file(file_key: str, message_id: str, open_id: str, file_nam
                 reply += f"\n📑 标题：{', '.join([t['text'] for t in titles[:5]])}"
             if result.get('error'):
                 reply += f"\n⚠️ 注意：{result['error']}"
-            reply += "\n\n💡 如需转为 PPT，发送： #2 toppt"
+            reply += "\n\n💡 如需转为 PPT，发送：转PPT"
 
         elif suffix == '.xlsx':
             if not DOC_PROCESSING_AVAILABLE:
@@ -364,7 +363,7 @@ def process_document_file(file_key: str, message_id: str, open_id: str, file_nam
                 reply += f"\n\n📝 内容预览：\n{truncated}"
                 if len(full_text) > 2000:
                     reply += "\n…（内容较长，已截取前 2000 字符）"
-            reply += "\n\n💡 如需转为 PPT，发送： #2 toppt"
+            reply += "\n\n💡 如需转为 PPT，发送：转PPT"
 
         send_message(open_id, reply)
     except Exception as e:

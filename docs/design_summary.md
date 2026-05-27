@@ -2,7 +2,7 @@
 
 **项目名称**：五角色 AI 助理系统  
 **路径**：`/Volumes/BR256G/ai-assistant-system`（测试环境）  
-**最后更新：2026-05-27（v3.6 双环境共存 + Git 版本管理 + 发布工作流）**
+**最后更新：2026-05-27（v3.8 回复格式优化 + 中文路由）**
 
 ---
 
@@ -14,14 +14,13 @@
 |------|------|----------|------|
 | 1号 chat-assistant | 闲聊、搜索、知识库、语音 | `venv-chat` (Python 3.12) | ✅ 功能完成 |
 | 2号 office-assistant | Word/Excel/PPT、文件夹监控 | `venv-office` (Python 3.12) | ✅ 功能完成 |
-| 3号 life-assistant | 个人日程管理、健康管理 | `venv-life` (Python 3.12) | 📋 待实现 |
+| 3号 life-assistant | 个人日程/健康/旅行/锻炼/工作规划 | `venv-life` (Python 3.12) | ✅ v1.0 已实现 |
 | 4号 file-assistant | 文件传输、文件管理 | `venv-file` (Python 3.12) | ✅ v1.0 已实现 |
 | 5号 sys-assistant | 系统管理、服务启停、进程管理 | `venv-sys` (Python 3.12) | ✅ v1.0 已实现 |
-| — | — | `venv-life` (Python 3.12) | ❌ 尚未创建 |
 
 共享层：全局 `venv`（Python 3.12.13）运行飞书回调服务，各助手独立虚拟环境严格隔离。
 
-**网络架构（2026-05-27 v3.6）：** 主环境 + 测试环境共享推理后端与 ngrok 隧道，端口隔离运行。开发在测试环境进行，通过 promote.sh 发布到主环境。
+**网络架构（2026-05-27 v3.7）：** 主环境 + 测试环境共享推理后端与 ngrok 隧道，端口隔离运行。开发在测试环境进行，通过 promote.sh 发布到主环境。
 
 **共享层（单实例）：**
   - `llama-server` :8080（推理引擎）
@@ -93,13 +92,17 @@
 │ │   │ └── summarizer.py
 │ │   ├── document_handler.py      # 文档消息入口
 │ │   └── api_server.py
-│ ├── life-assistant/              # 3号：个人日程管理+健康管理
+│ ├── life-assistant/              # 3号：个人日程+健康+旅行+锻炼+工作规划
 │ │ ├── venv-life/                 # 独立环境 (Python 3.12)
 │ │ └── src/
-│ │   ├── scheduler.py             # 日程管理（增删改查）
-│ │   ├── health_tracker.py        # 健康数据记录
+│ │   ├── __init__.py              # process() 入口 + 命令分发 + 完整 HELP_TEXT
+│ │   ├── scheduler.py             # 日程管理（增删改查+搜索）
+│ │   ├── health_tracker.py        # 健康数据记录（体重/步数/睡眠/心率等）
 │ │   ├── health_analyzer.py       # 健康趋势分析
-│ │   └── reminder.py              # 到期提醒
+│ │   ├── reminder.py              # 到期提醒推送
+│ │   ├── travel_planner.py        # 旅行规划（创建/行程/行李/打包清单）
+│ │   ├── workout_planner.py       # 锻炼规划（计划/记录/历史）
+│ │   └── work_planner.py          # 工作规划（待办/进行中/已完成/优先级/截止）
 │ ├── file-assistant/              # 4号：文件传输+文件管理
 │ │ ├── venv-file/                 # 独立环境 (Python 3.12)
 │ │ └── src/
@@ -203,22 +206,26 @@
 - ✅ ~40 脚本路径修复（`~/ai-assistant-system` → `$(dirname "$0")`）
 - ✅ Git 版本管理（测试环境 git init + .gitignore）
 - ✅ promote.sh / diff_envs.sh 发布工作流
+- ✅ 3号AI life-assistant 全部模块（日程/健康/旅行/锻炼/工作规划 + venv-life + 网页看板）
+- ✅ callback_port 从 settings.yaml 读取（不再硬编码 5001）
+- ✅ 3号AI 网页看板（dashboard 路由 + 手机适配）
 
 ---
 
 ## 6. 待办任务
 
-1. **3号AI life-assistant 开发**（个人日程管理 + 健康管理）—— 含 venv-life 创建 + 全部源文件
+1. **5号AI sys-assistant 飞书前缀路由 `#5`/`#sys` 接入** —— 当前独立服务运行
 
 ---
 
 ## 7. 风险说明
 
-- 本地大模型性能受限于 llama.cpp 模型文件质量
+- 模型稳定运行 qwen2.5:7b（llama.cpp 后端），短回答速度 ~30-45 tok/s
+- **qwen3.5 无 7B 版本**（只有 0.8B/2B/4B/9B），不推荐切换；Ollama 对比 llama.cpp 性能略低 5-10%，无切換必要
 - 飞书回调需公网可达，本地开发建议内网穿透
 - 凭证文件 `**/.env` 被 .gitignore 排除，不会被提交
 - 各助手虚拟环境独立，互不干扰
-- **venv-life 尚未创建**（3号AI 待开发）
+- 3号AI life-assistant 模块已开发完成（含 venv-life），中文关键词路由已接入飞书回调
 
 ---
 
@@ -231,3 +238,11 @@
 | 2026-05-27 | v3.5 测试环境凭证 | 3 套独立飞书 Bot |
 | 2026-05-27 | v3.6 脚本路径修复 | ~40 脚本 `~/ai-assistant-system` → `$(dirname "$0")` |
 | 2026-05-27 | v3.6 Git 版本管理 | git init + .gitignore，promote.sh + diff_envs.sh |
+| 2026-05-27 | v3.7 3号AI life-assistant | 日程/健康/旅行/锻炼/工作规划模块 + venv-life |
+| 2026-05-27 | v3.7 callback_port 动态化 | 从 settings.yaml 读取，含 dashboard_url |
+| 2026-05-27 | v3.7 网页看板 | 3号AI dashboard 路由 + 手机适配 |
+| 2026-05-27 | 讨论：qwen3.5/Ollama | 确认 qwen3.5 无 7B 版，llama.cpp 保持现状 |
+| 2026-05-27 | v3.8 回复格式优化 | 去掉思考过程、分隔线，时间在问题/答复前显示 |
+| 2026-05-27 | v3.8 帮助文本适配移动端 | 精简为紧凑格式 |
+| 2026-05-27 | v3.8 中文命令路由 | 2号: `#办公` / `转PPT`；3号: 中文关键词（日程/健康/旅行/锻炼/工作/看板） |
+| 2026-05-27 | v3.8 文档处理依赖修复 | python-docx/openpyxl/python-pptx 安装至 venv-chat |

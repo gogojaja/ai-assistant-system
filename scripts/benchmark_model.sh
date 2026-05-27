@@ -2,7 +2,7 @@
 # 模型推理速度测试（通过命令行参数指定模型）
 # 用法: ./benchmark_model.sh [模型名] [测试消息] [生成token数]
 
-MODEL="${1:-qwen3:4b}"
+MODEL="${1:-qwen2.5:7b}"
 TEST_MSG="${2:-你好，请简单介绍一下自己。}"
 NUM_PREDICT="${3:-64}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -15,7 +15,7 @@ echo "模型: $MODEL | 最大 token: $NUM_PREDICT"
 
 $VENV_PYTHON << PYEOF
 import time, requests, os
-model = os.environ.get('MODEL', 'qwen3:4b')
+model = os.environ.get('MODEL', 'qwen2.5:7b')
 msg = os.environ.get('TEST_MSG', '你好')
 num_predict = int(os.environ.get('NUM_PREDICT', 64))
 url = "http://localhost:11434/api/chat"

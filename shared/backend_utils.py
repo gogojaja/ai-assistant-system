@@ -38,7 +38,7 @@ def get_backend_config() -> dict:
             cfg = yaml.safe_load(config_path.read_text())
             backend = cfg.get("backend", "llama.cpp")
             port = cfg.get("ollama_port", 11434) if backend == "ollama" else cfg.get("llama_port", 8080)
-            model = cfg.get("ollama_model", "qwen3:4b") if backend == "ollama" else "gpt-3.5-turbo"
+            model = cfg.get("ollama_model", "qwen2.5:7b") if backend == "ollama" else "gpt-3.5-turbo"
             return {"backend": backend, "port": port, "model": model}
     except Exception:
         pass
