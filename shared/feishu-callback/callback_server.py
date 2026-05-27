@@ -31,6 +31,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "assistants/chat-assistant/src"))
 sys.path.insert(0, str(PROJECT_ROOT / "assistants/office-assistant/src"))
+sys.path.insert(0, str(PROJECT_ROOT / "assistants"))
 
 # 加载环境变量（飞书凭证）
 from dotenv import load_dotenv
@@ -159,11 +160,18 @@ def handle_event(data: dict):
                 cmd = user_text[3:].strip() if user_text.startswith("#2") else user_text[7:].strip()
                 process_office_text(cmd, open_id, target_id=target_id, receive_id_type=receive_id_type)
                 return
-            # 3号AI 通用事务助理（前缀 #3 / #life，待实现）
+            # 3号AI 日程健康助理（前缀 #3 / #life）
             if user_text.startswith("#3 ") or user_text.startswith("#life ") or user_text == "#3" or user_text == "#life":
+                cmd = user_text
+                for prefix in ["#3 ", "#life ", "#3", "#life"]:
+                    if cmd.startswith(prefix):
+                        cmd = cmd[len(prefix):].strip()
+                        break
+                from life_assistant.src import process as process_life
+                reply = process_life(cmd)
                 from shared.feishu_api import send_message
-                send_message(target_id, "📋 3号AI日程健康助理正在开发中，敬请期待。",
-                             receive_id_type=receive_id_type)
+                if reply:
+                    send_message(target_id, reply, receive_id_type=receive_id_type)
                 return
             # 默认走 1号AI 闲聊处理
             process_message(user_text, target_id, open_id=open_id, receive_id_type=receive_id_type)
