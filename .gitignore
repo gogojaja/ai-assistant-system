@@ -1,0 +1,24 @@
+# 虚拟环境
+venv/
+assistants/*/venv-*/
+
+# 运行时生成
+logs/
+__pycache__/
+*.pyc
+.crypto_key
+backups/
+*.bak
+
+# 共享二进制（占空间、不参与版本控制）
+shared/whisper.cpp/
+llama.cpp/
+
+# 系统/编辑器文件
+.DS_Store
+.local/
+.backup_stamp
+
+# 环境特定配置（各环境独立管理，含飞书密钥 — 绝不提交到 git）
+config/settings.yaml
+**/.env
