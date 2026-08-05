@@ -1,183 +1,112 @@
-# 设计汇总 (自动生成)
+# 设计汇总
 
-**项目名称**：五角色 AI 助理系统  
-**路径**：`/Volumes/BR256G/ai-assistant-system`（测试环境）  
-**最后更新：2026-06-13（v5.1 飞书聊天切云端 + 后端配置重构）**
-
----
-
-## 1. 整体架构
-
-系统由五个完全解耦的 AI 助理组成，通过飞书 Bot 统一交互，依赖本地推理引擎（llama.cpp 或 Ollama），所有数据本地留存并加密，默认断网运行。
-
-| 助手 | 定位 | 虚拟环境 | 状态 |
-|------|------|----------|------|
-| 1号 chat-assistant | 闲聊、搜索、知识库、语音 | `venv-chat` (Python 3.12) | ✅ 功能完成 |
-| 2号 office-assistant | Word/Excel/PPT、文件夹监控 | `venv-office` (Python 3.12) | ✅ 功能完成 |
-| 3号 life-assistant | 个人日程/健康/旅行/锻炼/工作规划 | `venv-life` (Python 3.12) | ✅ 功能完成 |
-| 4号 file-assistant | 文件传输、文件管理 | `venv-file` (Python 3.12) | ✅ 功能完成 |
-| 5号 sys-assistant | 系统管理、服务启停、进程管理 | `venv-sys` (Python 3.12) | ✅ 功能完成 |
-
-共享层：全局 `venv`（Python 3.12.13）运行飞书回调服务，各助手独立虚拟环境严格隔离。
-
-**网络架构（2026-06-13 v5.1）：** 主环境 + 测试环境共享推理后端与 ngrok 隧道，端口隔离运行。新增 Free API Hub 云端模型路由作为聊天后端的可选增强。
-
-**共享层（单实例）：**
-  - `free-api-hub` :5080（聊天实例）/ :5081（编程实例）
-  - `llama-server` :8080（推理引擎，备选）
-  - `ngrok account 1`：`employee-radish-fringe.ngrok-free.dev` → `:5101`（测试环境入口）
-  - `ngrok account 2`：`coastal-speckled-exorcist.ngrok-free.dev` → `:5001`（主环境入口）
-
-**主环境 (`~/ai-assistant-system/`) → `coastal-speckled-exorcist`：**
-
-| 组件 | 端口 | 说明 |
-|------|------|------|
-| callback_server | 5001 | `/webhook_chat` 本地处理 |
-| file_bot | 5002 | 4号文件助手 |
-| sys_bot | 5003 | 5号系统管理 |
-
-代理路由：`/webhook_file` → `:5002`, `/webhook_sys` → `:5003`
-
-**测试环境 (`/Volumes/BR256G/ai-assistant-system/`) → `employee-radish-fringe`：**
-
-| 组件 | 端口 | 说明 |
-|------|------|------|
-| callback_server | 5101 | `/webhook_chat` 本地处理 |
-| file_bot | 5102 | 4号文件助手 |
-| sys_bot | 5103 | 5号系统管理 |
-
-代理路由：`/webhook_file` → `:5102`, `/webhook_sys` → `:5103`
+**项目名称**：三角色 AI 助理系统  
+**工作区**：`/Volumes/BR256G/ai-assistant-system`  
+**环境基线**：测试环境，`.env_type` = `test`  
+**当前状态**：三角色（闲聊 / 办公 / 日程）已成为主运行基线，旧五角色与 4 号文件助手描述仅保留为历史归档，不作为现行运行说明。
 
 ---
 
-## 2. 技术选型
+## 1. 当前架构
 
-| 组件 | 选型 | 说明 |
-|------|------|------|
-| 语言 | Python 3.12.13 | LTS 稳定版 |
-| Web框架 | Flask 2.3.3 | 端口5001 |
-| 大模型引擎 | **free-api-hub** (默认聊天) 或 **llama.cpp** (备选) | :5080/5081 云端路由 :8080 本地备选 |
-| 飞书SDK | 自封装 `shared/feishu_api.py` | 回调服务 |
-| 文档处理 | openpyxl 3.1.2, python-docx, python-pptx | Excel/Word/PPT |
-| 语音识别 | whisper.cpp + speech_utils | 离线语音转文字 |
-| 翻译 | deep-translator 1.11.4 | 免费翻译 |
-| 加密 | cryptography (Fernet) | 对话历史/敏感数据加密存储 |
-| 知识库检索 | 纯 Python（无第三方） | BM25 评分 + 中文二元组分词 + 短语加权 |
-| 配置 | python-dotenv + PyYAML | 凭证分离 |
-| 备份 | tar + crontab | 每日自动备份（保留7天） |
-| 文件夹监控 | watchdog | 办公文件变更监测 |
+系统采用三角色分工，统一由飞书 Bot 入口接收事件，再由回调服务分发到对应助手，用共享基础设施做配置、加密、知识库和推理路由。
+
+| 角色 | 目录 | 职责 | 入口 |
+|------|------|------|------|
+| 1号 AI | `assistants/chat-assistant/` | 闲聊、天气、翻译、搜索、知识库、语音、跨会话记忆 | `message_handler.process_message()` |
+| 2号 AI | `assistants/office-assistant/` | Word 摘要、Excel 分析、PPT 生成、办公文本处理 | `document_handler.process_office_text()` |
+| 3号 AI | `assistants/life-assistant/` | 日程、健康、旅行、锻炼、工作管理、提醒 | `process()` |
+
+共享层：`shared/` 提供飞书 API、回调入口、模型路由、加密、知识库和通用工具。当前主入口仍是 `shared/feishu-callback/callback_server.py`，Webhook 统一在 :5101 监听。
 
 ---
 
-## 3. 目录结构（实际）
+## 2. 实际运行基线
 
-```
-~/ai-assistant-system/
-├── venv/                          # 全局主环境 (Python 3.12)
+### 测试环境
+
+- 工作区：`/Volumes/BR256G/ai-assistant-system`
+- 入口端口：`5101`
+- 回调地址：`https://employee-radish-fringe.ngrok-free.dev/webhook_chat`
+- 当前主线：只保留三角色回调入口，不再维护旧 5102 文件助手与 4 号角色
+
+### 共享后端
+
+- 默认路由：`free-api-hub` / 云端模型调用
+- 本地兜底：`llama.cpp` / `Ollama`
+- 统一入口：`shared/backend_utils.py`
+
+### 环境约束
+
+- 仅允许在当前测试工作区中操作 `/Volumes/BR256G/ai-assistant-system`
+- 测试端口范围：5101 / 5102 / 5103
+- 禁止操作主环境 5001 / 5002 / 5003
+- 修改入口、路由、回调逻辑后，通常需重启回调服务并执行回归测试
+
+---
+
+## 3. 关键目录
+
+```text
+/Volumes/BR256G/ai-assistant-system
 ├── assistants/
-│ ├── chat-assistant/              # 1号：闲聊检索+语音
-│ │ ├── venv-chat/                 # 独立环境 (Python 3.12)
-│ │ └── src/
-│ │   ├── main.py                  # talk() 流式调模型，支持双后端+wake
-│ │   ├── message_handler.py       # 消息分发+历史+提示词+知识库+身份
-│ │   ├── voice_handler.py         # 语音消息处理链路
-│ │   └── chat_feishu.py           # 飞书轮询脚本
-│ ├── office-assistant/            # 2号：办公文档
-│ │ ├── venv-office/               # 独立环境 (Python 3.12)
-│ │ └── src/
-│ │   ├── core/
-│ │   │ ├── ppt_generator.py       # PPT 成品生成 (python-pptx)
-│ │   │ ├── folder_monitor.py      # 文件夹监控 (watchdog)
-│ │   │ ├── word_processor.py
-│ │   │ ├── excel_processor.py
-│ │   │ └── summarizer.py
-│ │   ├── document_handler.py      # 文档消息入口
-│ │   └── api_server.py
-│ ├── life-assistant/              # 3号：个人日程+健康+旅行+锻炼+工作规划
-│ │ ├── venv-life/                 # 独立环境 (Python 3.12)
-│ │ └── src/
-│ │   ├── __init__.py              # process() 入口 + 命令分发 + 完整 HELP_TEXT
-│ │   ├── scheduler.py             # 日程管理（增删改查+搜索）
-│ │   ├── health_tracker.py        # 健康数据记录（体重/步数/睡眠/心率等）
-│ │   ├── health_analyzer.py       # 健康趋势分析
-│ │   ├── reminder.py              # 到期提醒推送
-│ │   ├── travel_planner.py        # 旅行规划（创建/行程/行李/打包清单）
-│ │   ├── workout_planner.py       # 锻炼规划（计划/记录/历史）
-│ │   └── work_planner.py          # 工作规划（待办/进行中/已完成/优先级/截止）
-│ ├── file-assistant/              # 4号：文件传输+文件管理
-│ │ ├── venv-file/                 # 独立环境 (Python 3.12)
-│ │ └── src/
-│ │   ├── file_manager.py          # 文件列表/搜索/复制/移动/删除
-│ │   ├── file_transfer.py         # 文件上传/下载/分享
-│ │   └── security.py              # 路径安全验证
-│ ├── sys-assistant/               # 5号：系统管理+服务+进程
-│ │ ├── venv-sys/                  # 独立环境 (Python 3.12)
-│ │ ├── .env                       # 飞书 Bot 凭证
-│ │ └── src/
-│ │   ├── __init__.py              # process() 入口 + 命令分发
-│ │   ├── bot_server.py            # 独立 Flask 服务 (端口 5003)
-│ │   ├── system_monitor.py        # 系统状态监控
-│ │   ├── service_manager.py       # 服务启停管理
-│ │   ├── process_manager.py       # 进程管理
-│ │   ├── log_viewer.py            # 日志查看
-│ │   ├── backup_manager.py        # 备份管理
-│ │   └── security.py              # 安全操作限制
+│   ├── chat-assistant/
+│   ├── office-assistant/
+│   ├── life-assistant/
+│   └── __init__.py
 ├── shared/
-│ ├── feishu_api.py                # 飞书API封装
-│ ├── feishu-bot/.env              # 飞书凭证（1号/2号/3号共用）
-│ ├── feishu-callback/
-│ │ └── callback_server.py         # Flask主入口：/webhook 本地处理 + /webhook_file 反向代理
-│ ├── utils.py                     # 通用工具（天气、翻译、搜索）
-│ ├── crypto.py                    # 数据加密工具 (Fernet)
-│ ├── knowledge_base.py            # 私有知识库检索（支持按 user_id 分用户隔离）
-│ ├── speech_utils.py              # 语音识别 (whisper.cpp)
-│ └── voice/voice_input.py         # 本地录音输入
-├── config/
-│ ├── settings.yaml                # 全局配置（后端、端口、资源限制、云端路由）
-│ └── whitelist.yaml               # 文件访问白名单
-├── prompts/                       # 用户自定义提示词
-├── data/knowledge/                # 知识库文档目录
-├── logs/                          # 运行时日志
-├── docs/design_summary.md         # 本文档
+│   ├── feishu-callback/
+│   ├── backend_utils.py
+│   ├── feishu_api.py
+│   ├── knowledge_base.py
+│   ├── crypto.py
+│   └── ...
 ├── scripts/
-│ ├── start_all_services.sh        # 启动所有服务
-│ ├── stop_all_services.sh         # 停止所有服务
-│ ├── promote.sh                   # 一键发布测试→主环境
-│ ├── diff_envs.sh                 # 环境对比
-│ ├── restart_callback.sh          # 重启 Flask
-│ ├── monitor_services.sh          # 服务守护
-│ ├── daily_backup.sh              # 每日备份
-│ ├── restore.sh                   # 一键还原
-│ └── ...（其他运维脚本）
-├── .gitignore                     # Git 忽略规则（排除密钥/配置）
-└── .git/                          # Git 仓库（仅测试环境）
+│   ├── check_env.py
+│   ├── diagnose.py
+│   ├── start_all_services.sh
+│   ├── stop_all_services.sh
+│   ├── restart_callback.sh
+│   ├── monitor_services.sh
+│   └── regression_test.py
+├── docs/
+│   ├── 跨会话交接文档.md
+│   └── design_summary.md
+├── data/
+├── logs/
+├── config/
+├── prompts/
+├── requirements/
+└── AGENTS.md
 ```
 
 ---
 
-## 4. 当前服务状态
+## 4. 当前运行策略
 
-**共享层（单实例）：**
-- **云端路由** `127.0.0.1:5080` (free-api-hub 聊天) ✅
-- **云端编程** `127.0.0.1:5081` (free-api-hub 编程) ✅
-- **推理引擎** `127.0.0.1:8080` (llama.cpp，备选) ✅
-- **主 ngrok** `employee-radish-fringe.ngrok-free.dev` → `:5101`（测试环境）✅
-- **第二 ngrok** `coastal-speckled-exorcist.ngrok-free.dev` → `:5001`（主环境）✅
+- 入口统一：`callback_server.py` 接收文本、语音和文件事件
+- 角色分派：在回调服务中按关键词或命令前缀分发到对应助手
+- 业务边界：三角色之间不直接耦合，统一通过 `shared/` 提供基础能力
+- 安全边界：不在主环境中执行 5001/5002/5003 相关操作，避免环境串扰
 
-**主环境 (`~/ai-assistant-system/`)：**
-- **回调服务** `127.0.0.1:5001` ✅ callback_server.py (venv-chat)
-- **文件 Bot** `127.0.0.1:5002` ✅ 独立 Flask (venv-file)
-- **系统 Bot** `127.0.0.1:5003` ✅ 独立 Flask (venv-sys)
+---
 
-**测试环境 (`/Volumes/BR256G/ai-assistant-system/`)：**
-- **回调服务** `127.0.0.1:5101` ✅ callback_server.py (venv-chat)
-- **文件 Bot** `127.0.0.1:5102` ✅ 独立 Flask (venv-file)
-- **系统 Bot** `127.0.0.1:5103` ✅ 独立 Flask (venv-sys)
+## 5. 维护说明
 
-**基础服务：**
-- **依赖库**：flask, requests, openpyxl, python-dotenv, deep-translator, pyyaml, python-docx, python-pptx, watchdog, cryptography 全部 ✅
-- **核心文件**：全部核心文件完整 ✅
-- **Git 版本管理**：测试环境 git 仓库已初始化 ✅
+- 即使有历史文档保留，当前工程状态以三角色和测试环境基线为准
+- 旧五角色/4号文件助手说明不再作为运行或维护依据
+- 对入口脚本、回调代码和路由逻辑的改动，必须同步检查 `scripts/check_env.py` 与回归测试
+
+---
+
+## 6. 参考入口
+
+- 回调服务：`shared/feishu-callback/callback_server.py`
+- 闲聊入口：`assistants/chat-assistant/src/message_handler.py`
+- 办公入口：`assistants/office-assistant/src/document_handler.py`
+- 日程入口：`assistants/life-assistant/src/__init__.py`
+- 规则说明：`AGENTS.md`
+- 交接文档：`docs/跨会话交接文档.md`
 - **发布工作流**：promote.sh + diff_envs.sh 就绪 ✅
 
 ---

@@ -1,5 +1,5 @@
 #!/bin/bash
-# 启动测试环境 1/2/3号 Bot（callback_server :5101，不启动 ngrok/推理后端）
+# 启动测试环境 1/2/3号 Bot（callback_server :5101，当前三角色基线）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT="$(dirname "$SCRIPT_DIR")"
 LOG_DIR="$PROJECT/logs"
@@ -26,4 +26,4 @@ echo ""
 echo "✅ 测试环境 1/2/3号 Bot 已启动"
 echo "  回调 URL: https://employee-radish-fringe.ngrok-free.dev/webhook_chat"
 echo ""
-echo "  4号/5号 Bot 不受影响"
+echo "  当前三角色基线仅保留 1/2/3 号助手，不再维护旧 4 号文件助手。"

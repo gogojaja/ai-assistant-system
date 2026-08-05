@@ -4,7 +4,7 @@ if [ ! -f "$(dirname "$(dirname "$0")")/.env_type" ] || [ "$(cat "$(dirname "$(d
     echo "❌ 安全拦截：当前不是测试环境，禁止停止"
     exit 1
 fi
-# 仅停止测试环境服务（5101/5102），不碰共享推理后端和 ngrok
+# 仅停止当前测试环境回调服务（:5101），不碰共享推理后端和 ngrok
 echo "正在停止测试环境服务..."
 
 kill_port() {
@@ -17,7 +17,6 @@ kill_port() {
     fi
 }
 kill_port 5101
-kill_port 5102
 
 sleep 1
 echo "✅ 测试环境服务已停止"

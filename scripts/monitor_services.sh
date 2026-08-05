@@ -1,5 +1,5 @@
 #!/bin/bash
-# 测试环境服务守护 — 仅监控本环境服务（:5101/:5102）
+# 测试环境服务守护 — 当前三角色基线，仅监控本环境回调服务（:5101）
 # 不管理共享服务（llama-server、ngrok），不碰主环境进程
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT="$(dirname "$SCRIPT_DIR")"
@@ -33,10 +33,6 @@ while true; do
     check_service 5101 "Flask 回调" \
         "nohup '$PROJECT/assistants/chat-assistant/venv-chat/bin/python' \
                '$PROJECT/shared/feishu-callback/callback_server.py' > '$LOG_DIR/flask.log' 2>&1 &"
-
-    check_service 5102 "4号文件助手" \
-        "export FILE_BOT_PORT=5102; nohup '$PROJECT/assistants/file-assistant/venv-file/bin/python' \
-               '$PROJECT/assistants/file-assistant/src/file_bot_server.py' >> '$LOG_DIR/file_bot.log' 2>&1 &"
 
     sleep 60
 done
