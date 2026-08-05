@@ -10,11 +10,12 @@
  - 标准库：json, urllib.request, urllib.parse
  - 第三方：deep-translator (GoogleTranslator), requests
  - 项目内：无
-版本：v2.4
+版本：v2.7
 更新记录：
- - 2026-05-24: 稳定版本。搜索功能因网络环境问题降级为友好提示。天气、翻译功能正常。
+ - 2026-06-14: 搜索改为 Bocha 优先（国内中文最优）→ Tavily → SerpApi 三级降级。
 """
 import json
+import os
 import re
 import datetime
 import urllib.request
@@ -277,51 +278,162 @@ translate_text = translate
 
 # ===== 搜索 =====
 
-def search_web(keyword):
-    """使用 Bing 搜索并解析前几条结果。"""
+def _load_config():
+    """加载 settings.yaml"""
+    import yaml
+    path = os.path.join(os.path.dirname(__file__), '..', 'config', 'settings.yaml')
     try:
-        import requests
-    except ImportError:
-        return {"success": False, "results": [], "error": "⚠️ 搜索功能暂不可用：requests 未安装"}
+        with open(path) as f:
+            return yaml.safe_load(f) or {}
+    except Exception:
+        return {}
 
+
+def _search_bocha(keyword, api_key):
+    """使用 Bocha 搜索（国内中文最优，支持 freshness/summary）"""
+    import requests
     try:
-        requests.get("https://www.bing.com", timeout=5)
-    except requests.RequestException:
-        return {"success": False, "results": [], "error": "⚠️ 无网络连接，请检查网络后重试"}
-
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-        }
-        params = {"q": keyword, "count": 10}
-        response = requests.get("https://www.bing.com/search", params=params, headers=headers, timeout=10)
-        if response.status_code != 200:
-            return {"success": False, "results": [], "error": f"⚠️ 搜索失败：HTTP {response.status_code}"}
-
-        from html import unescape
-        html = response.text
-        items = re.findall(r'<li class="b_algo"[^>]*>(.*?)</li>', html, re.DOTALL)
+        resp = requests.post(
+            "https://api.bochaai.com/v1/web-search",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={"query": keyword, "count": 5, "summary": True, "freshness": "noLimit"},
+            timeout=15
+        )
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        if data.get("code") != 200 or not data.get("data", {}).get("webPages", {}).get("value"):
+            return None
+        items = data["data"]["webPages"]["value"]
         results = []
         for item in items[:5]:
-            title_match = re.search(r'<h2[^>]*><a[^>]*>(.*?)</a></h2>', item, re.DOTALL)
-            url_match = re.search(r'<a[^>]*href="(https?://[^"]+)"', item)
-            snippet_match = re.search(r'<p[^>]*>(.*?)</p>', item, re.DOTALL)
-            if title_match:
-                title = unescape(re.sub(r'<[^>]+>', '', title_match.group(1)).strip())
-                url = url_match.group(1) if url_match else ""
-                snippet = unescape(re.sub(r'<[^>]+>', '', snippet_match.group(1)).strip()) if snippet_match else ""
+            title = (item.get("name") or "").strip()
+            url = (item.get("url") or "").strip()
+            snippet = (item.get("summary") or "").strip()
+            if title:
                 results.append({
                     "title": title,
                     "url": url,
                     "snippet": snippet[:300]
                 })
         if not results:
-            return {"success": True, "results": [], "message": "未找到相关结果，请尝试其他关键词"}
-        return {"success": True, "results": results}
-    except requests.Timeout:
-        return {"success": False, "results": [], "error": "⚠️ 搜索超时，请稍后重试"}
-    except Exception as e:
-        return {"success": False, "results": [], "error": f"⚠️ 搜索出错：{e}"}
+            return None
+        return {"success": True, "source": "bocha", "results": results}
+    except Exception:
+        return None
+
+
+def _search_tavily(keyword, api_key):
+    """使用 Tavily 搜索（AI 优化，1 次 = 1 credit，免费 1,000/月）"""
+    import requests
+    try:
+        resp = requests.post("https://api.tavily.com/search", json={
+            "api_key": api_key,
+            "query": keyword,
+            "search_depth": "basic",
+            "include_answer": False,
+            "include_images": False,
+            "include_raw_content": False,
+            "max_results": 5,
+        }, timeout=15)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        if data.get("error"):
+            return None
+        items = data.get("results", [])
+        if not items:
+            return None
+        results = []
+        for item in items[:5]:
+            title = (item.get("title") or "").strip()
+            url = (item.get("url") or "").strip()
+            snippet = (item.get("content") or "").strip()
+            if title:
+                results.append({
+                    "title": title,
+                    "url": url,
+                    "snippet": snippet[:300]
+                })
+        if not results:
+            return None
+        return {"success": True, "source": "tavily", "results": results}
+    except Exception:
+        return None
+
+
+def _search_serpapi(keyword, api_key):
+    """使用 SerpApi 搜索（备用，免费 250 次/月）"""
+    import requests
+    try:
+        params = {
+            "engine": "google",
+            "api_key": api_key,
+            "q": keyword,
+            "hl": "zh-CN",
+            "gl": "cn",
+        }
+        resp = requests.get("https://serpapi.com/search", params=params, timeout=15)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        if data.get("error") or not data.get("organic_results"):
+            return None
+        items = data["organic_results"]
+        results = []
+        for item in items[:5]:
+            title = (item.get("title") or "").strip()
+            url = (item.get("link") or item.get("url") or "").strip()
+            snippet = (item.get("snippet") or "").strip()
+            if title:
+                results.append({
+                    "title": title,
+                    "url": url,
+                    "snippet": snippet[:300]
+                })
+        if not results:
+            return None
+        return {"success": True, "source": "serpapi", "results": results}
+    except Exception:
+        return None
+
+
+def search_web(keyword):
+    """联网搜索。四级降级：Bocha(国内最优) → Tavily(AI优化) → SerpApi(Google) → 预留扩展。"""
+    try:
+        import requests
+    except ImportError:
+        return {"success": False, "results": [], "error": "⚠️ 搜索功能暂不可用：requests 未安装"}
+
+    cfg = _load_config()
+    bocha_key = (cfg.get("bocha_key") or "").strip()
+    tavily_key = (cfg.get("tavily_key") or "").strip()
+    serpapi_key = (cfg.get("serpapi_key") or "").strip()
+
+    if not bocha_key and not tavily_key and not serpapi_key:
+        return {"success": False, "results": [], "error": "⚠️ 搜索服务未配置（缺少 API Key）"}
+
+    errors = []
+
+    if bocha_key:
+        result = _search_bocha(keyword, bocha_key)
+        if result:
+            return result
+        errors.append("Bocha 不可用")
+
+    if tavily_key:
+        result = _search_tavily(keyword, tavily_key)
+        if result:
+            return result
+        errors.append("Tavily 不可用")
+
+    if serpapi_key:
+        result = _search_serpapi(keyword, serpapi_key)
+        if result:
+            return result
+        errors.append("SerpApi 不可用")
+
+    return {"success": False, "results": [], "error": f"⚠️ 搜索失败（{' → '.join(errors)}）"}
 
 
 def format_results(search_result):

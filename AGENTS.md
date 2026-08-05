@@ -2,6 +2,8 @@
 
 接收需求后禁止急于作答、禁止立刻动手编写内容，优先统筹梳理全局信息，规划完整可行主干方案 + 兜底替代方案，展示方案待用户确认后再落地执行。
 
+你是一个专业的编程专家，不要为了照顾我的情绪而工作，要有专业的态度。
+
 会话启动第一时间提醒切换专家模式，保障高阶规则正常生效。
 
 输出规避晦涩术语，所有操作复制即可运行。项目启动即刻生成《环境搭建方案设计文档》，记录架构、选型、目录、版本、部署、风险、进度等信息，内容变动即时同步更新，保障跨 AI 无缝接续工作。
@@ -11,6 +13,14 @@
 对话交接前完成全文档校准更新，生成新会话开场话术；新会话接收文档后静待指令，不擅自操作。
 
 会话结束复盘全部交互，结合执行效果给出提示词优化建议。
+
+禁止使用 Python 脚本来修改项目文件，必须使用专用的文件编辑工具（如 edit、write）。
+
+### 方案验证铁律
+后续任何方案必须先到 GitHub Issues / Discussions、Stack Overflow、官方文档查证，确认是真实可用、有社区实践支持的方案，严禁凭模型训练数据臆想、拼接不存在的 API 或功能。查询后贴出引用来源，用户确认后再落地。
+
+### 文件操作铁律
+修改任何文件前，必须先 read 该文件的真实内容，确认当前实际配置后再做修改，严禁凭对话上下文记忆或假设判断文件内容。
 
 ## 刚性安全约束规则（最高优先级）
 
@@ -166,9 +176,9 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 
 ## 1. 项目概述
 
-**目标**：构建一套完全本地离线、基于飞书 Bot 统一交互的五角色 AI 助理系统，数据不离开本地设备，支持 macOS Apple Silicon 推理。
+**目标**：构建一套基于飞书 Bot 统一交互的五角色 AI 助理系统，核心数据留存本地设备并加密存储，支持 macOS Apple Silicon 推理。默认使用 free-api-hub 云端路由，断网时自动降级至本地推理（llama.cpp/Ollama）。
 
-**架构**：飞书 Bot → ngrok 隧道 → Flask 回调服务 (port 5101) → 推理后端 (llama.cpp 或 Ollama) → 各助手处理器 → 飞书回复
+**架构**：飞书 Bot → cloudflared/ngrok 隧道 → Flask 回调服务 (port 5101) → 推理后端 (free-api-hub 云端路由 / llama.cpp / Ollama，三后端可切换) → 各助手处理器 → 飞书回复
 
 **物理路径**：`~/ai-assistant-system/`（主环境）、`/Volumes/BR256G/ai-assistant-system/`（测试环境）
 
@@ -184,7 +194,7 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 | 2号AI | office-assistant | `assistants/office-assistant/` | Word 摘要、Excel 分析、PPT 生成、文件变更监控 | `document_handler.process_document_file()` — 飞书文件消息触发；`process_office_text()` — `#办公` 前缀命令 |
 | 3号AI | life-assistant | `assistants/life-assistant/` | 个人日程/健康/旅行/锻炼/工作规划管理 | `process()` — 飞书文字以 `日程/健康/旅行/锻炼/工作/看板` 关键词开头触发 |
 | 4号AI | file-assistant | `assistants/file-assistant/` | 文件传输、文件管理 | `process()` — 飞书文字 `#4`/`#file` 前缀触发 |
-| 5号AI | sys-assistant | `assistants/sys-assistant/` | 系统管理、服务启停、进程管理 | `process()` — 飞书文字 `#5`/`#sys` 前缀触发 |
+| 5号AI | sys-assistant | `assistants/sys-assistant/` | 系统管理、服务启停、进程管理 | `process()` — 飞书文字 `#5`/`#sys` 前缀触发 | ❌ 测试环境未实现，待补建 |
 
 ---
 
@@ -194,35 +204,35 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 
 | ID | 需求 | 优先级 | 状态 | 实现位置 |
 |----|------|--------|------|----------|
-| CHAT-01 | 接收飞书文本消息，调用模型回复 | P0 | ✅ 已实现 | `callback_server.py:111` → `message_handler.process_message()` → `main.talk()` |
-| CHAT-02 | 流式调用模型，拼接 content 和 reasoning_content | P0 | ✅ 已实现 | `main.py:talk()` |
-| CHAT-03 | content 为空时从 reasoning 提取回答（5 层策略） | P0 | ✅ 已实现 | `main.py:_extract_from_reasoning()` |
-| CHAT-04 | 对话历史 per-user 持久化（最多 10 轮） | P0 | ✅ 已实现 | `message_handler.py:_load_history/_save_history()` |
+| CHAT-01 | 接收飞书文本消息，调用模型回复 | P0 | ✅ 已实现 | `shared/feishu-callback/callback_server.py:192` → `message_handler.process_message()` → `main.talk()` |
+| CHAT-02 | 流式调用模型，拼接 content 和 reasoning_content | P0 | ✅ 已实现 | `chat-assistant/src/main.py:talk()` (L191) |
+| CHAT-03 | content 为空时从 reasoning 提取回答（5 层策略） | P0 | ✅ 已实现 | `chat-assistant/src/main.py:_extract_from_reasoning()` (L273) |
+| CHAT-04 | 对话历史 per-user 持久化（最多 10 轮） | P0 | ✅ 已实现 | `chat-assistant/src/message_handler.py:_load_history()` (L112) / `_save_history()` (L123) |
 | CHAT-05 | 对话历史加密存储 | P0 | ✅ 已实现 | `shared/crypto.py` Fernet 加解密，`message_handler.py` 读写时调用 |
-| CHAT-06 | 天气查询（识别城市名，默认北京） | P1 | ✅ 已实现 | `message_handler.py:124-155` + `main.py:get_weather()` |
-| CHAT-07 | 中英翻译（MyMemory 免费 API） | P1 | ✅ 已实现 | `message_handler.py:114-121` + `shared/utils.py:translate_text()` |
-| CHAT-08 | 网络搜索（Bing） | P2 | ✅ 已实现 | `message_handler.py:132-136` + `shared/utils.py:handle_search()` |
-| CHAT-09 | 清空历史指令 `clear` | P1 | ✅ 已实现 | `message_handler.py:100-104` |
-| CHAT-10 | 身份识别（"我是谁"问题从历史正则提取） | P1 | ✅ 已实现 | `message_handler.py:_find_user_name()` |
-| CHAT-11 | 自定义提示词管理（设置/查看/重置） | P2 | ✅ 已实现 | `message_handler.py:106-130` + `main.py:_load_custom_prompt/_save_custom_prompt()` |
-| CHAT-12 | 私有知识库检索（`查知识：<问题>`） | P2 | ✅ 已实现 | `shared/knowledge_base.py` v2.2（BM25+中文二元组+短语加权） + `message_handler.py:133-148` |
-| CHAT-13 | 离线语音消息接收（whisper.cpp 转文字） | P1 | ✅ 已实现 | `callback_server.py:113-121` → `voice_handler.py` → `speech_utils.py` |
+| CHAT-06 | 天气查询（识别城市名，默认北京） | P1 | ✅ 已实现 | `chat-assistant/src/message_handler.py:221-260` + `shared/utils.py:get_weather()` (L191) |
+| CHAT-07 | 中英翻译（MyMemory 免费 API） | P1 | ✅ 已实现 | `chat-assistant/src/message_handler.py:211-218` + `shared/utils.py:translate_text()` |
+| CHAT-08 | 网络搜索（Bing） | P2 | ✅ 已实现 | `chat-assistant/src/message_handler.py:311-340` + `shared/utils.py:handle_search()` |
+| CHAT-09 | 清空历史指令 `clear` | P1 | ✅ 已实现 | `chat-assistant/src/message_handler.py:156-157` |
+| CHAT-10 | 身份识别（"我是谁"问题从历史正则提取） | P1 | ✅ 已实现 | `chat-assistant/src/message_handler.py:_find_user_name()` (L69) |
+| CHAT-11 | 自定义提示词管理（设置/查看/重置） | P2 | ✅ 已实现 | `chat-assistant/src/message_handler.py:162-186` + `chat-assistant/src/main.py:_load_custom_prompt()` (L40) / `_save_custom_prompt()` (L53) |
+| CHAT-12 | 私有知识库检索（`查知识：<问题>`） | P2 | ✅ 已实现 | `shared/knowledge_base.py` v2.2（BM25+中文二元组+短语加权） + `chat-assistant/src/message_handler.py:188-209` |
+| CHAT-13 | 离线语音消息接收（whisper.cpp 转文字） | P1 | ✅ 已实现 | `shared/feishu-callback/callback_server.py:202` → `chat-assistant/src/voice_handler.py:process_voice_message()` (L30) → `shared/speech_utils.py` |
 | CHAT-14 | 知识库文件导入（放入 data/knowledge/ 自动索引） | P2 | ✅ 已实现 | `shared/knowledge_base.py:import_doc()` |
-| CHAT-15 | 模型进程闲置休眠/唤醒 | P1 | ✅ 已实现 | `monitor_services.sh:idle_sleep_check()` + `main.py:_wake_model()` |
-| CHAT-16 | 多后端支持（llama.cpp / Ollama 配置切换） | P2 | ✅ 已实现 | `config/settings.yaml:backend` + `main.py:_get_backend_config()` |
+| CHAT-15 | 模型进程闲置休眠/唤醒 | P1 | ✅ 已实现 | `scripts/monitor_services.sh:idle_sleep_check()` + `chat-assistant/src/main.py:_wake_model()` (L143) |
+| CHAT-16 | 多后端支持（free-api-hub 云端路由 / llama.cpp / Ollama 三后端切换） | P2 | ✅ 已实现 | `config/settings.yaml:chat_api_url/backend` + `shared/backend_utils.py:get_backend_config()` (L33) |
 
 ### 3.2 2号AI 办公助理
 
 | ID | 需求 | 优先级 | 状态 | 实现位置 |
 |----|------|--------|------|----------|
-| OFF-01 | 接收飞书 .docx 文件，提取文本生成摘要 | P1 | ✅ 已实现 | `document_handler.py:91-119` → `core/word_processor.py` + `core/summarizer.py` |
-| OFF-02 | 接收飞书 .xlsx 文件，分析结构与数据 | P1 | ✅ 已实现 | `document_handler.py:120-145` → `core/excel_processor.py` |
-| OFF-03 | Excel 数据 AI 智能摘要 | P1 | ✅ 已实现 | `document_handler.py:generate_excel_summary()` 调用 `main.talk()` |
+| OFF-01 | 接收飞书 .docx 文件，提取文本生成摘要 | P1 | ✅ 已实现 | `office-assistant/src/document_handler.py:309-326` → `core/word_processor.py` + `core/summarizer.py` |
+| OFF-02 | 接收飞书 .xlsx 文件，分析结构与数据 | P1 | ✅ 已实现 | `office-assistant/src/document_handler.py:328-339` → `core/excel_processor.py` |
+| OFF-03 | Excel 数据 AI 智能摘要 | P1 | ✅ 已实现 | `office-assistant/src/document_handler.py:generate_excel_summary()` (L101) 调用 `backend_utils.call_api()` |
 | OFF-04 | 根据文案生成 .pptx 成品文件 | P2 | ✅ 已实现 | `core/ppt_generator.py:generate_from_text()` / `generate_presentation()` |
 | OFF-05 | 办公文件夹变更监控（watchdog） | P2 | ✅ 已实现 | `core/folder_monitor.py:start_monitor()` / `stop_monitor()` |
 | OFF-06 | PPT 内容自动分段解析 | P2 | ✅ 已实现 | `ppt_generator.py:generate_from_text()` 按行自动拆分幻灯片 |
-| OFF-07 | `#办公` 前缀路由（替代 `#2`/`#office`） | P1 | ✅ 已实现 | `callback_server.py:161-170` |
-| OFF-08 | `转PPT` 直接路由（无需前缀） | P1 | ✅ 已实现 | `callback_server.py:171-174` |
+| OFF-07 | `#办公` 前缀路由（替代 `#2`/`#office`） | P1 | ✅ 已实现 | `shared/feishu-callback/callback_server.py:161-169` |
+| OFF-08 | `转PPT` 直接路由（无需前缀） | P1 | ✅ 已实现 | `shared/feishu-callback/callback_server.py:171-173` |
 
 ### 3.3 3号AI 个人日程与健康管理助理
 
@@ -239,7 +249,7 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 | LIFE-09 | 锻炼规划（计划/训练/记录/历史） | P1 | ✅ 已实现 | `life-assistant/src/workout_planner.py` |
 | LIFE-10 | 工作管理（创建/状态/优先级/截止/备注） | P1 | ✅ 已实现 | `life-assistant/src/work_planner.py` |
 | LIFE-11 | 看板网页访问 | P2 | ✅ 已实现 | `life-assistant/src/__init__.py` |
-| LIFE-12 | 关键词路由（日程/健康/旅行/锻炼/工作/看板） | P1 | ✅ 已实现 | `callback_server.py:175-190` |
+| LIFE-12 | 关键词路由（日程/健康/旅行/锻炼/工作/看板） | P1 | ✅ 已实现 | `shared/feishu-callback/callback_server.py:175-192` |
 
 ### 3.4 4号AI 文件管理助理
 
@@ -252,7 +262,7 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 | FILE-05 | 文件上传（接收飞书文件/图片保存至本地） | P1 | ✅ 已实现 | `file-assistant/src/file_bot_server.py` |
 | FILE-06 | 文件下载/分享（通过飞书发送文件） | P1 | ✅ 已实现 | `file-assistant/src/file_transfer.py` |
 | FILE-07 | 路径安全验证（白名单+敏感文件过滤） | P0 | ✅ 已实现 | `file-assistant/src/security.py` |
-| FILE-08 | 独立飞书 Bot Webhook 服务（端口5002） | P1 | ✅ 已实现 | `file-assistant/src/file_bot_server.py` |
+| FILE-08 | 独立飞书 Bot Webhook 服务（测试环境端口5102 / 主环境5002） | P1 | ✅ 已实现 | `file-assistant/src/file_bot_server.py` |
 | FILE-09 | 中文命令交互（无需前缀，非法命令拒绝） | P1 | ✅ 已实现 | `file-assistant/src/__init__.py` |
 | FILE-10 | 自动守护集成（monitor_services.sh） | P2 | ✅ 已实现 | `scripts/monitor_services.sh` |
 
@@ -260,14 +270,14 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 
 | ID | 需求 | 优先级 | 状态 | 实现位置 |
 |----|------|--------|------|----------|
-| SYSADM-01 | 系统状态查询（CPU/内存/磁盘/网络/负载） | P1 | 📋 待实现 | `sys-assistant/src/system_monitor.py` |
-| SYSADM-02 | 服务管理（启动/停止/重启/查看状态） | P1 | 📋 待实现 | `sys-assistant/src/service_manager.py` |
-| SYSADM-03 | 进程管理（查看进程树/终止进程/优先级调整） | P1 | 📋 待实现 | `sys-assistant/src/process_manager.py` |
-| SYSADM-04 | 日志查看（实时 tail/关键词过滤/日志归档） | P2 | 📋 待实现 | `sys-assistant/src/log_viewer.py` |
-| SYSADM-05 | 备份管理（手动触发备份/查看备份列表/还原） | P2 | 📋 待实现 | `sys-assistant/src/backup_manager.py` |
-| SYSADM-06 | 远程服务启停（通过飞书命令控制远端服务） | P1 | 📋 待实现 | `sys-assistant/src/service_manager.py` |
-| SYSADM-07 | 安全操作限制（禁止 sudo、白名单命令校验） | P0 | 📋 待实现 | `sys-assistant/src/security.py` |
-| SYSADM-08 | 飞书 `#5`/`#sys` 前缀路由 | P1 | 📋 待实现 | `callback_server.py` 路由到 `sys-assistant` |
+| SYSADM-01 | 系统状态查询（CPU/内存/磁盘/网络/负载） | P1 | ❌ 未实现 | `sys-assistant/src/system_monitor.py`（测试环境目录缺失，待补建） |
+| SYSADM-02 | 服务管理（启动/停止/重启/查看状态） | P1 | ❌ 未实现 | `sys-assistant/src/service_manager.py`（测试环境目录缺失，待补建） |
+| SYSADM-03 | 进程管理（查看进程树/终止进程） | P1 | ❌ 未实现 | `sys-assistant/src/process_manager.py`（测试环境目录缺失，待补建） |
+| SYSADM-04 | 日志查看（实时 tail/关键词过滤） | P2 | ❌ 未实现 | `sys-assistant/src/log_viewer.py`（测试环境目录缺失，待补建） |
+| SYSADM-05 | 备份管理（手动触发备份/查看备份列表/还原） | P2 | ❌ 未实现 | `sys-assistant/src/backup_manager.py`（测试环境目录缺失，待补建） |
+| SYSADM-06 | 远程服务启停（通过飞书命令控制远端服务） | P1 | ❌ 未实现 | `sys-assistant/src/service_manager.py` — 待补建独立 Bot 服务(:5103) |
+| SYSADM-07 | 安全操作限制（禁止 sudo、白名单命令校验） | P0 | ❌ 未实现 | `sys-assistant/src/security.py`（测试环境目录缺失，待补建） |
+| SYSADM-08 | 飞书 `#5`/`#sys` 前缀路由 | P1 | ❌ 未实现 | 待补建：独立 Bot 服务 + `callback_server.py` 反向代理 `/webhook_sys` → `:5103` |
 
 ### 3.6 系统层需求
 
@@ -284,7 +294,7 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 | SYS-09 | 环境诊断脚本 | P1 | ✅ 已实现 | `scripts/diagnose.py` |
 | SYS-10 | 数据加密初始化 | P2 | ✅ 已实现 | `scripts/init_crypto.sh` + `shared/crypto.py` |
 | SYS-11 | 文件访问隔离（五助手独立白名单） | P0 | ✅ 已实现 | `config/whitelist.yaml` |
-| SYS-12 | 后端配置切换（llama.cpp / Ollama） | P2 | ✅ 已实现 | `config/settings.yaml` + `main.py:_get_backend_config()` |
+| SYS-12 | 后端配置切换（free-api-hub / llama.cpp / Ollama 三后端） | P2 | ✅ 已实现 | `config/settings.yaml:chat_api_url/backend` + `shared/backend_utils.py:get_backend_config()` |
 
 ---
 
@@ -293,7 +303,7 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 ```
 飞书用户发送消息
   │
-  ├─ cloudflared 隧道 (https → localhost:5001)
+  ├─ cloudflared 隧道 (https → localhost:5101 测试环境 / 5001 主环境)
   │
   └─ Flask callback_server.py
        │
@@ -311,7 +321,8 @@ AI 助理在任何操作前必须执行以下环境确认流程：
        │
        └─ message_type == "file"  → document_handler (下载 → Word/Excel/PPT 处理)
 
-推理后端 (由 settings.yaml 决定):
+推理后端 (由 settings.yaml 决定，优先级从高到低):
+  ├─ chat_api_url 配置存在 → free-api-hub 云端路由 (:5080 聊天 / :5081 编程)
   ├─ backend=llama.cpp → localhost:8080 (llama-server + qwen2.5:7b)
   └─ backend=ollama    → localhost:11434 (ollama serve + ollama_model)
 ```
@@ -320,20 +331,91 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 
 ## 5. 非功能需求
 
+### 5.1 离线运行（DEF-006 整改：明确定义）
+
 | 类别 | 需求 | 指标/约束 |
 |------|------|-----------|
-| 离线 | 默认断网运行，所有服务本地启动 | 天气/翻译/搜索需要网络，失败时优雅降级 |
-| 安全 | 数据加密存储 | 对话历史、敏感文件使用 cryptography.fernet 加密 |
-| 安全 | 飞书凭证隔离 | APP_ID/APP_SECRET 存于 `shared/feishu-bot/.env`，不提交 |
-| 安全 | 禁止 sudo | 全程使用用户权限，无提权操作 |
-| 性能 | 推理内存上限 | 默认 8GB，超限自动重启 |
-| 性能 | 闲置资源释放 | 模型进程空闲 30 分钟自动 SIGSTOP |
-| 可靠 | 服务守护 | 自动检测进程/端口状态，故障自动拉起 |
-| 可靠 | 备份恢复 | 每日备份保留 7 天，restore.sh 一键还原 |
-| 隔离 | 文件访问 | 五助手互不可见各自数据目录（whitelist.yaml） |
-| 隔离 | 虚拟环境 | 全局 + 五个助手共 6 个独立 venv，不可混用 |
-| 兼容 | 推理后端 | 同时支持 llama.cpp 和 Ollama，配置切换 |
-| 平台 | macOS Apple Silicon | M 系列芯片，Metal GPU 加速 |
+| 离线-核心 | **核心功能离线可用**：飞书消息接收/路由、1~4 号 AI 本地处理、文件管理、日程管理在断网时必须可用 | 断网时核心功能可用率 100%（free-api-hub 云端路由不可用时自动降级至 llama.cpp 本地推理） |
+| 离线-降级 | **联网功能优雅降级**：天气/翻译/搜索/free-api-hub 云端路由断网时返回明确提示文案 | 降级响应时间 < 3 秒，提示文案明确说明"该功能需联网，当前不可用" |
+| 离线-恢复 | **联网恢复自动恢复**：网络恢复后联网功能自动恢复，无需重启服务 | 恢复检测间隔 <= 60 秒 |
+
+### 5.2 性能效率（DEF-004 整改：补充量化标准）
+
+| 类别 | 需求 | 指标/约束 | 验收方法 |
+|------|------|-----------|----------|
+| 性能-响应 | 闲聊回复响应时间 | P95 < 30 秒（free-api-hub）/ P95 < 60 秒（llama.cpp 本地） | 压测脚本发送 20 条消息统计 P50/P95/P99 |
+| 性能-并发 | 并发用户数 | 支持 1-3 人同时使用（个人系统） | 模拟 3 用户并发发送消息，无超时无报错 |
+| 性能-内存 | 推理进程内存上限 | 默认 8GB，超限自动重启 | monitor_services.sh 内存监控触发验证 |
+| 性能-资源 | 闲置资源释放 | 模型进程空闲 30 分钟自动 SIGSTOP | 闲置 30 分钟后验证进程状态为 T（stopped） |
+| 性能-启动 | 服务启动耗时 | <= 10 秒（Flask 回调 + 3 秒等待） | 计时 start_all_services.sh 执行到服务就绪 |
+
+### 5.3 可靠性（DEF-010 整改：补充 SLA/灾备）
+
+| 类别 | 需求 | 指标/约束 | 验收方法 |
+|------|------|-----------|----------|
+| 可靠-守护 | 服务守护自动拉起 | 自动检测进程/端口状态，故障 60 秒内自动拉起 | kill 进程后验证 60 秒内自动恢复 |
+| 可靠-备份 | 每日自动备份 | crontab 3:00 执行，保留 7 天 | 验证 backup 目录有 7 天内备份文件 |
+| 可靠-恢复 | 一键还原 | restore.sh 列出备份 -> 确认 -> 停服务 -> 备份当前 -> 还原 | 执行 restore.sh 验证完整流程 |
+| 可靠-SLA | 系统可用性 | SLA >= 99%（个人系统，允许计划停机） | 月度统计可用时间/总时间 |
+| 可靠-MTTR | 故障恢复时间 | MTTR <= 30 分钟（从故障到服务恢复） | 模拟故障验证恢复耗时 |
+| 可靠-灾备 | 数据一致性校验 | 每日备份后自动校验备份完整性 | 校验脚本对比源文件与备份文件数量/大小 |
+| 可靠-单点 | Flask 回调服务高可用 | 当前单点运行，需评估主备方案（待规划） | 风险登记，纳入架构评审 |
+
+### 5.4 安全性（DEF-011/012/013 整改：扩展加密/审计/隧道控制）
+
+| 类别 | 需求 | 指标/约束 | 验收方法 |
+|------|------|-----------|----------|
+| 安全-加密 | 数据加密存储 | 对话历史、健康数据、日程数据、旅行数据使用 cryptography.fernet 加密 | 验证 data/ 下敏感文件均为密文 |
+| 安全-凭证 | 飞书凭证隔离 | APP_ID/APP_SECRET 存于 .env，不提交 git | 验证 .gitignore 包含 .env |
+| 安全-权限 | 禁止 sudo | 全程用户权限运行，5 号 AI 仅可查看不可提权 | 验证所有脚本无 sudo 调用 |
+| 安全-审计 | 安全审计日志 | 所有文件操作、服务启停、配置变更记录审计日志，保留 180 天 | 验证安全审计台账 Sheet 有记录 |
+| 安全-隧道 | 隧道访问控制 | cloudflared/ngrok 隧道配置请求频率限制与来源验证（待规划） | 渗透测试验证隧道安全性 |
+| 安全-脱敏 | 日志脱敏 | 日志输出时对敏感数据（手机号/邮箱/密钥）脱敏 | 检查日志文件无明文敏感信息 |
+| 安全-路径 | 文件访问隔离 | 五助手互不可见各自数据目录（whitelist.yaml） | 验证 whitelist.yaml 配置与实际访问一致 |
+
+### 5.5 监控告警（DEF-007 整改：新增需求域）
+
+| 类别 | 需求 | 指标/约束 | 验收方法 |
+|------|------|-----------|----------|
+| 监控-服务 | 服务异常告警 | 服务进程异常退出时自动推送飞书告警消息 | kill 进程验证飞书收到告警 |
+| 监控-资源 | 资源阈值告警 | 内存 > 7GB 或磁盘 > 90% 时推送飞书告警 | 模拟资源超限验证告警推送 |
+| 监控-隧道 | 隧道断开告警 | cloudflared/ngrok 隧道断开时推送飞书告警 | 停止隧道验证告警推送 |
+
+### 5.6 容量规划（DEF-014 整改：新增需求域）
+
+| 类别 | 需求 | 指标/约束 | 验收方法 |
+|------|------|-----------|----------|
+| 容量-用户 | 并发用户预估 | 1-3 人日常使用，峰值 5 人 | 压测验证 |
+| 容量-数据 | 数据量增长预估 | 对话历史 ~1MB/月/人，知识库 ~100MB，日志 ~50MB/月 | 季度评估存储使用率 |
+| 容量-存储 | 存储容量阈值 | 磁盘使用率 > 80% 告警，> 90% 自动清理旧日志 | 验证告警触发 |
+
+### 5.7 数据保留（DEF-008 整改：新增需求域）
+
+| 类别 | 需求 | 指标/约束 | 验收方法 |
+|------|------|-----------|----------|
+| 保留-对话 | 对话历史保留 | 保留 90 天，超期自动清理 | 验证 90 天前记录被清理 |
+| 保留-日志 | 日志保留 | 保留 30 天，超期自动清理 | 验证 30 天前日志被清理 |
+| 保留-备份 | 备份保留 | 保留 7 天，超期 find -mtime +7 -delete | 验证 7 天前备份被清理 |
+| 保留-审计 | 审计日志保留 | 保留 180 天 | 验证审计日志保留策略 |
+
+### 5.8 合规（DEF-015 整改：新增需求域）
+
+| 类别 | 需求 | 指标/约束 | 验收方法 |
+|------|------|-----------|----------|
+| 合规-隐私 | 个人数据知情同意 | 系统采集个人数据前告知用户数据用途（待规划） | 首次使用时展示隐私提示 |
+| 合规-删除 | 用户数据删除权 | 用户可请求删除全部个人数据（对话/健康/日程）（待规划） | 验证删除命令清空相关数据 |
+| 合规-出境 | 数据出境评估 | free-api-hub 云端路由涉及数据出境，需评估合规性（待评估） | 法律咨询评估 |
+
+### 5.9 兼容性与可维护性
+
+| 类别 | 需求 | 指标/约束 |
+|------|------|-----------|
+| 兼容-后端 | 三后端可切换：free-api-hub 云端路由（默认）/ llama.cpp（本地备选）/ Ollama（本地备选） |
+| 兼容-OS | macOS 14+ (Sonoma/Sequoia)，Apple Silicon M 系列芯片 |
+| 兼容-Python | Python 3.12.x（3.13+ 兼容性待评估） |
+| 隔离-venv | 全局 + 五个助手共 6 个独立 venv，不可混用 |
+| 隔离-文件 | 五助手互不可见各自数据目录（whitelist.yaml） |
+| 可维护-模块 | 五助手完全解耦，shared 共享层统一封装 |
 
 ---
 
@@ -344,7 +426,8 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 | 组件 | 版本/路径 | 用途 |
 |------|-----------|------|
 | Python | 3.12.x (macOS 原生或 Homebrew) | 运行时 |
-| llama.cpp | `~/llama.cpp/build/bin/llama-server` | 推理引擎 (Metal) |
+| llama.cpp | `~/llama.cpp/build/bin/llama-server` | 本地推理引擎 (Metal)，备选后端 |
+| free-api-hub | `:5080`(聊天) / `:5081`(编程) | 云端模型路由，默认后端（需联网） |
 | qwen2.5:7b 模型 | `~/.local/lib/ollama/blobs/sha256-2bada8a74506*` (4.4GB) | 推理模型 |
 | whisper.cpp | `shared/whisper.cpp/build/bin/whisper-cli` | 语音识别 |
 | cloudflared | Homebrew 安装 | HTTPS 隧道 |
@@ -365,6 +448,7 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 | python-pptx | office-assistant | PPT 生成 |
 | cryptography | chat-assistant | 数据加密 |
 | watchdog | office-assistant | 文件夹监控 |
+| mammoth | 全局 venv | docx→text 转换 |
 
 ### 6.3 目录结构
 
@@ -442,7 +526,7 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 | ❌ 无 Docker | 纯 Python venv + 原生进程，不自建容器 |
 | ❌ 无 OpenClaw | 不使用 OpenClaw 框架 |
 | ❌ 无 sudo | 全程用户权限运行（5号AI 仅可查看，不可提权） |
-| ❌ 无自动联网 | 仅天气/翻译/搜索功能按需联网，核心服务离线 |
+| ❌ 无自动联网 | 核心功能离线可用；天气/翻译/搜索/free-api-hub 按需联网，断网时优雅降级 |
 | ❌ 无临时绕过 | 所有修复必须根因，不注释屏蔽 |
 | ✅ 飞书统一入口 | 所有交互通过飞书 Bot，无其他 UI |
 | ✅ 本地优先 | 所有数据留存本地，对话历史加密 |
@@ -456,8 +540,8 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 
 | 指标 | 当前值 | 说明 |
 |------|--------|------|
-| 模型推理 | qwen2.5:7b (4.4GB) | 推理模型参数 |
-| 上下文长度 | 4096 tokens | llama.cpp 配置 |
+| 模型推理 | free-api-hub 云端路由（默认）/ qwen2.5:7b (4.4GB) 本地备选 | 当前默认走云端路由，本地模型为 llama.cpp/Ollama 备选 |
+| 上下文长度 | 4096 tokens | llama.cpp 配置（free-api-hub 由云端决定） |
 | 回复 max_tokens | 1024 | 兼顾 reasoning 和 content |
 | API 超时 | 60 秒 | requests timeout |
 | 对话记忆 | 最多 10 轮 | per-user 裁剪 |
@@ -465,6 +549,238 @@ AI 助理在任何操作前必须执行以下环境确认流程：
 | 闲置休眠 | 30 分钟 | SIGSTOP 挂起 |
 | 启动耗时 | ~5 秒 | 服务启动 + 3 秒等待 |
 | 备份保留 | 7 天 | find -mtime +7 -delete |
+
+---
+
+## 9. 需求来源追溯矩阵（DEF-005 整改）
+
+> 每条需求关联来源编号、提出人、提出日期，确保可回溯至原始提出方。
+
+### 来源编号说明
+
+| 来源编号 | 来源类型 | 说明 |
+|----------|----------|------|
+| SRC-001 | 原始需求文档 | 项目立项时用户提供的初始需求 |
+| SRC-002 | 用户对话决策 | 开发过程中用户通过飞书对话确定的需求 |
+| SRC-003 | 测试反馈 | 回归测试发现的功能缺失或改进建议 |
+| SRC-004 | 安全评审 | 安全分析识别的防护需求 |
+| SRC-005 | 行业最佳实践 | 基于 IEEE 830 / ISO 25010 标准补充的需求 |
+| SRC-006 | 需求评审整改 | 评审报告 DEF-xxx 缺陷整改新增需求 |
+| SRC-007 | 运维经验 | 日常运维中发现的需要补充的需求 |
+
+### 9.1 1号AI 闲聊助理需求来源
+
+| 需求ID | 来源编号 | 提出人 | 提出日期 | 来源说明 |
+|--------|----------|--------|----------|----------|
+| CHAT-01 | SRC-001 | 用户 | 2026-05-20 | 项目立项：飞书消息接收与回复 |
+| CHAT-02 | SRC-001 | 用户 | 2026-05-20 | 项目立项：流式调用模型 |
+| CHAT-03 | SRC-003 | 开发者 | 2026-05-22 | 测试发现 content 为空时回复异常 |
+| CHAT-04 | SRC-001 | 用户 | 2026-05-20 | 项目立项：对话历史持久化 |
+| CHAT-05 | SRC-004 | 开发者 | 2026-05-23 | 安全评审：对话数据需加密存储 |
+| CHAT-06 | SRC-002 | 用户 | 2026-05-21 | 用户对话：查询天气需求 |
+| CHAT-07 | SRC-002 | 用户 | 2026-05-21 | 用户对话：中英翻译需求 |
+| CHAT-08 | SRC-002 | 用户 | 2026-05-22 | 用户对话：网络搜索需求 |
+| CHAT-09 | SRC-002 | 用户 | 2026-05-22 | 用户对话：清空历史指令 |
+| CHAT-10 | SRC-003 | 开发者 | 2026-05-23 | 测试反馈：身份识别功能 |
+| CHAT-11 | SRC-002 | 用户 | 2026-05-24 | 用户对话：自定义提示词需求 |
+| CHAT-12 | SRC-002 | 用户 | 2026-05-25 | 用户对话：私有知识库检索 |
+| CHAT-13 | SRC-001 | 用户 | 2026-05-20 | 项目立项：语音消息支持 |
+| CHAT-14 | SRC-003 | 开发者 | 2026-05-26 | 测试反馈：知识库文件导入 |
+| CHAT-15 | SRC-007 | 开发者 | 2026-05-28 | 运维经验：模型进程资源管理 |
+| CHAT-16 | SRC-005 | 开发者 | 2026-06-05 | 行业实践：多后端可切换架构 |
+
+### 9.2 2号AI 办公助理需求来源
+
+| 需求ID | 来源编号 | 提出人 | 提出日期 | 来源说明 |
+|--------|----------|--------|----------|----------|
+| OFF-01 | SRC-001 | 用户 | 2026-05-20 | 项目立项：Word 文件摘要 |
+| OFF-02 | SRC-001 | 用户 | 2026-05-20 | 项目立项：Excel 文件分析 |
+| OFF-03 | SRC-002 | 用户 | 2026-05-22 | 用户对话：Excel AI 摘要 |
+| OFF-04 | SRC-002 | 用户 | 2026-05-25 | 用户对话：PPT 生成需求 |
+| OFF-05 | SRC-007 | 开发者 | 2026-05-28 | 运维经验：文件夹监控 |
+| OFF-06 | SRC-003 | 开发者 | 2026-05-26 | 测试反馈：PPT 分段解析 |
+| OFF-07 | SRC-002 | 用户 | 2026-05-24 | 用户对话：#办公 前缀路由 |
+| OFF-08 | SRC-002 | 用户 | 2026-05-25 | 用户对话：转PPT 直接路由 |
+
+### 9.3 3号AI 个人助理需求来源
+
+| 需求ID | 来源编号 | 提出人 | 提出日期 | 来源说明 |
+|--------|----------|--------|----------|----------|
+| LIFE-01~03 | SRC-001 | 用户 | 2026-05-20 | 项目立项：日程管理（创建/查询/修改/删除） |
+| LIFE-04 | SRC-002 | 用户 | 2026-05-22 | 用户对话：日程到期提醒 |
+| LIFE-05 | SRC-001 | 用户 | 2026-05-20 | 项目立项：健康数据记录 |
+| LIFE-06 | SRC-002 | 用户 | 2026-05-23 | 用户对话：健康数据统计 |
+| LIFE-07 | SRC-005 | 开发者 | 2026-05-26 | 行业实践：健康趋势分析 |
+| LIFE-08 | SRC-002 | 用户 | 2026-05-24 | 用户对话：旅行规划 |
+| LIFE-09 | SRC-002 | 用户 | 2026-05-24 | 用户对话：锻炼规划 |
+| LIFE-10 | SRC-002 | 用户 | 2026-05-25 | 用户对话：工作管理 |
+| LIFE-11 | SRC-002 | 用户 | 2026-05-26 | 用户对话：看板网页 |
+| LIFE-12 | SRC-002 | 用户 | 2026-05-24 | 用户对话：中文关键词路由 |
+
+### 9.4 4号AI 文件管理助理需求来源
+
+| 需求ID | 来源编号 | 提出人 | 提出日期 | 来源说明 |
+|--------|----------|--------|----------|----------|
+| FILE-01~04 | SRC-001 | 用户 | 2026-05-20 | 项目立项：文件管理（列表/搜索/查看/复制移动） |
+| FILE-05 | SRC-001 | 用户 | 2026-05-20 | 项目立项：文件上传 |
+| FILE-06 | SRC-001 | 用户 | 2026-05-20 | 项目立项：文件下载/分享 |
+| FILE-07 | SRC-004 | 开发者 | 2026-05-23 | 安全评审：路径安全验证 |
+| FILE-08 | SRC-001 | 用户 | 2026-05-20 | 项目立项：独立 Bot Webhook |
+| FILE-09 | SRC-002 | 用户 | 2026-05-24 | 用户对话：中文命令交互 |
+| FILE-10 | SRC-007 | 开发者 | 2026-05-28 | 运维经验：自动守护集成 |
+
+### 9.5 5号AI 系统管理助理需求来源
+
+| 需求ID | 来源编号 | 提出人 | 提出日期 | 来源说明 |
+|--------|----------|--------|----------|----------|
+| SYSADM-01~08 | SRC-001 | 用户 | 2026-05-20 | 项目立项：系统管理全套功能（测试环境待补建） |
+
+### 9.6 系统层需求来源
+
+| 需求ID | 来源编号 | 提出人 | 提出日期 | 来源说明 |
+|--------|----------|--------|----------|----------|
+| SYS-01~02 | SRC-001 | 用户 | 2026-05-20 | 项目立项：一键启停服务 |
+| SYS-03 | SRC-007 | 开发者 | 2026-05-28 | 运维经验：服务守护 |
+| SYS-04~05 | SRC-007 | 开发者 | 2026-05-28 | 运维经验：资源管理 |
+| SYS-06 | SRC-003 | 开发者 | 2026-05-26 | 测试反馈：唤醒机制 |
+| SYS-07~08 | SRC-001 | 用户 | 2026-05-20 | 项目立项：备份恢复 |
+| SYS-09 | SRC-005 | 开发者 | 2026-05-26 | 行业实践：环境诊断 |
+| SYS-10 | SRC-004 | 开发者 | 2026-05-23 | 安全评审：数据加密初始化 |
+| SYS-11 | SRC-004 | 开发者 | 2026-05-23 | 安全评审：文件访问隔离 |
+| SYS-12 | SRC-005 | 开发者 | 2026-06-05 | 行业实践：后端配置切换 |
+
+### 9.7 非功能需求来源（5.1~5.9 节）
+
+| 需求域 | 来源编号 | 提出人 | 提出日期 | 来源说明 |
+|--------|----------|--------|----------|----------|
+| 5.1 离线运行 | SRC-006 | 评审整改 | 2026-08-02 | DEF-006 整改：明确离线定义 |
+| 5.2 性能效率 | SRC-006 | 评审整改 | 2026-08-02 | DEF-004 整改：补充量化标准 |
+| 5.3 可靠性 | SRC-006 | 评审整改 | 2026-08-02 | DEF-010 整改：补充 SLA/灾备 |
+| 5.4 安全性 | SRC-006 | 评审整改 | 2026-08-02 | DEF-011/012/013 整改：扩展加密/审计/隧道 |
+| 5.5 监控告警 | SRC-006 | 评审整改 | 2026-08-02 | DEF-007 整改：新增需求域 |
+| 5.6 容量规划 | SRC-006 | 评审整改 | 2026-08-02 | DEF-014 整改：新增需求域 |
+| 5.7 数据保留 | SRC-006 | 评审整改 | 2026-08-02 | DEF-008 整改：新增需求域 |
+| 5.8 合规 | SRC-006 | 评审整改 | 2026-08-02 | DEF-015 整改：新增需求域 |
+| 5.9 兼容性 | SRC-005 | 开发者 | 2026-06-05 | 行业实践：兼容性标准 |
+
+---
+
+## 10. 补充规范（DEF-016~023 整改）
+
+### 10.1 需求变更历史（DEF-016 整改）
+
+| 版本 | 日期 | 变更内容 | 变更类型 | 审批人 |
+|------|------|----------|----------|--------|
+| v1.0 | 2026-05-20 | 初始需求文档创建（66 项需求） | 新建 | 用户 |
+| v1.1 | 2026-06-05 | CHAT-16/SYS-12 新增多后端支持（free-api-hub） | 新增 | 用户 |
+| v1.2 | 2026-08-02 | DEF-001~015 整改：SYSADM 状态修正、后端架构更新、端口标准化、非功能需求扩展 | 整改 | 用户 |
+| v1.3 | 2026-08-02 | DEF-005/009 整改：需求来源追溯矩阵、实现位置引用修正 | 整改 | 用户 |
+| v1.4 | 2026-08-02 | DEF-016~023 整改：变更历史、MoSCoW 优先级、量化标准、术语表、编号格式、依赖关系、兼容性 | 整改 | 用户 |
+
+> 变更规则：任何需求新增/修改/删除须先执行变更影响评估，经用户审批后落地，并在此表登记。
+
+### 10.2 MoSCoW 优先级映射（DEF-017 整改）
+
+现有 P0/P1/P2 与 MoSCoW 法的映射关系：
+
+| 优先级 | MoSCoW | 含义 | 数量 | 示例 |
+|--------|--------|------|------|------|
+| P0 | Must Have | 系统核心功能，缺失则系统不可用 | 9 项 | CHAT-01~05, FILE-07, SYS-01~03 |
+| P1 | Should Have | 重要功能，缺失影响用户体验但系统可用 | 37 项 | CHAT-06~07, OFF-01~02, LIFE-01~03 |
+| P2 | Could Have | 增强功能，优先级较低，资源允许时实现 | 20 项 | CHAT-08, OFF-04~06, LIFE-04 |
+
+> Won't Have：无 Docker、无 sudo、无 OpenClaw、无自动联网（见约束表第 7 节）
+
+### 10.3 "快速操作"量化标准（DEF-018 整改）
+
+| 维度 | 量化标准 | 验收方法 |
+|------|----------|----------|
+| 操作步骤 | 用户执行任何操作 <= 3 步（输入命令 → 执行 → 获得结果） | 统计飞书命令交互轮次 |
+| 命令可执行性 | 所有命令可直接复制粘贴运行，无需手动修改参数 | 复制命令到飞书验证执行 |
+| 响应可读性 | 输出无晦涩术语，非技术用户可理解 | 抽查 10 条回复，无未解释的技术术语 |
+| 错误提示 | 操作失败时返回明确的错误原因和建议操作 | 模拟 5 种错误场景验证提示文案 |
+
+### 10.4 "优雅降级"量化标准（DEF-019 整改）
+
+| 联网功能 | 降级条件 | 降级行为 | 响应时间 | 验收方法 |
+|----------|----------|----------|----------|----------|
+| 天气查询 | 网络不可达 | 返回"天气查询需联网，当前网络不可用，请稍后重试" | < 3 秒 | 断网后发送天气查询 |
+| 翻译 | MyMemory API 不可达 | 返回"翻译服务暂时不可用，请稍后重试" | < 3 秒 | 断网后发送翻译命令 |
+| 网络搜索 | Bing API 不可达 | 返回"搜索功能需联网，当前不可用" | < 3 秒 | 断网后发送搜索命令 |
+| free-api-hub 云端路由 | 云端服务不可达 | 自动降级至 llama.cpp 本地推理（如已配置）或返回"AI 服务暂时不可用" | < 5 秒（降级检测） | 停止 free-api-hub 后发送消息 |
+| cloudflared 隧道 | 隧道断开 | 飞书消息无法接收，monitor_services.sh 检测后推送告警 | < 60 秒（检测间隔） | 停止隧道验证告警推送 |
+
+### 10.5 术语表（DEF-020 整改）
+
+| 术语 | 定义 |
+|------|------|
+| 闲置休眠 | 模型推理进程在无请求超过 30 分钟时，通过 SIGSTOP 信号挂起，释放 CPU 资源；新请求到达时通过 SIGCONT 唤醒 |
+| 快速操作 | 用户通过飞书发送单条命令即可完成操作，步骤 <= 3 步，命令可直接复制运行（详见 10.3 节） |
+| 优雅降级 | 联网功能在网络不可用时返回明确的不可用提示，而非抛出异常或无响应（详见 10.4 节） |
+| 范围基准 | 项目立项时确定的功能边界，任何超出基准的变更须经审批（见第 7 节约束表） |
+| 三后端切换 | 系统支持 free-api-hub 云端路由（默认）、llama.cpp 本地推理、Ollama 本地推理三种后端，通过 settings.yaml 配置切换 |
+| per-user 持久化 | 每个飞书用户的对话历史独立存储，互不干扰，最多保留 10 轮 |
+| 白名单路径 | config/whitelist.yaml 中定义的各助手允许访问的文件路径，超出白名单的访问被拒绝 |
+| SIGSTOP/SIGCONT | Unix 信号：SIGSTOP 暂停进程（不释放内存）、SIGCONT 恢复进程执行 |
+| free-api-hub | 云端模型路由服务，默认运行在 :5080(聊天)/:5081(编程)，需联网使用 |
+
+### 10.6 需求编号格式说明（DEF-021 整改）
+
+当前编号方案：`<角色前缀>-<序号>`（如 CHAT-01、OFF-01、LIFE-01、FILE-01、SYSADM-01、SYS-01）
+
+| 角色前缀 | 对应角色 | 编号范围 |
+|----------|----------|----------|
+| CHAT | 1号AI 闲聊助理 | CHAT-01~16 |
+| OFF | 2号AI 办公助理 | OFF-01~08 |
+| LIFE | 3号AI 个人助理 | LIFE-01~12 |
+| FILE | 4号AI 文件管理助理 | FILE-01~10 |
+| SYSADM | 5号AI 系统管理助理 | SYSADM-01~08 |
+| SYS | 系统层需求 | SYS-01~12 |
+
+> **IEEE 830 推荐格式说明**：IEEE 830 推荐使用 `REQ-<维度>-<模块>-<序号>` 格式（如 REQ-FUNC-CHAT-001）。当前项目采用简化编号方案，因项目规模适中（66 项需求）且角色边界清晰，简化方案可满足可追溯性要求。若后续需求增长至 200+ 项，建议迁移至 IEEE 830 推荐格式。
+
+### 10.7 需求依赖关系（DEF-022 整改）
+
+| 需求ID | 依赖需求 | 依赖类型 | 说明 |
+|--------|----------|----------|------|
+| CHAT-02 | CHAT-01 | 强依赖 | 流式调用依赖消息接收 |
+| CHAT-03 | CHAT-02 | 强依赖 | reasoning 提取依赖流式调用 |
+| CHAT-04 | CHAT-01 | 强依赖 | 历史持久化依赖消息接收 |
+| CHAT-05 | CHAT-04 | 强依赖 | 加密依赖历史存储 |
+| CHAT-06~08 | CHAT-01 | 强依赖 | 天气/翻译/搜索依赖消息路由 |
+| CHAT-09 | CHAT-04 | 强依赖 | 清空历史依赖历史存储 |
+| CHAT-10 | CHAT-04 | 强依赖 | 身份识别依赖历史数据 |
+| CHAT-11 | CHAT-01 | 强依赖 | 提示词管理依赖消息路由 |
+| CHAT-12 | CHAT-01 | 强依赖 | 知识库检索依赖消息路由 |
+| CHAT-13 | CHAT-01 | 强依赖 | 语音识别依赖消息接收 |
+| CHAT-14 | CHAT-12 | 强依赖 | 知识库导入依赖检索功能 |
+| CHAT-15 | SYS-03 | 强依赖 | 闲置休眠依赖服务守护 |
+| CHAT-16 | SYS-12 | 弱依赖 | 多后端依赖后端配置 |
+| OFF-01~08 | SYS-01 | 强依赖 | 办公功能依赖服务启动 |
+| OFF-03 | CHAT-16 | 弱依赖 | AI 摘要依赖推理后端 |
+| LIFE-01~12 | SYS-01 | 强依赖 | 生活功能依赖服务启动 |
+| FILE-01~10 | SYS-01 | 强依赖 | 文件功能依赖服务启动 |
+| FILE-08 | SYS-01 | 强依赖 | 独立 Bot 依赖服务启动 |
+| SYSADM-01~08 | SYS-01 | 强依赖 | 系统管理依赖服务启动 |
+| SYS-03 | SYS-01 | 强依赖 | 守护依赖服务启动 |
+| SYS-04~05 | SYS-03 | 强依赖 | 资源管理依赖守护 |
+| SYS-06 | CHAT-15 | 强依赖 | 唤醒依赖休眠机制 |
+| SYS-08 | SYS-07 | 强依赖 | 还原依赖备份 |
+
+> 关键路径：CHAT-01 → CHAT-02 → CHAT-03（消息接收 → 流式调用 → reasoning 提取）
+
+### 10.8 兼容性需求细化（DEF-023 整改）
+
+| 维度 | 兼容范围 | 已验证 | 待验证 |
+|------|----------|--------|--------|
+| macOS 版本 | macOS 14+（Sonoma / Sequoia） | macOS 15 (Sequoia) | macOS 14 (Sonoma) |
+| 芯片架构 | Apple Silicon M 系列芯片 | M2 | M1 / M3 / M4 |
+| Python 版本 | 3.12.x（3.13+ 兼容性待评估） | 3.12.13 | 3.13+ |
+| Flask 版本 | 3.x | 3.1.3 | - |
+| cloudflared | 最新 Homebrew 版本 | 已验证 | - |
+| ffmpeg | 最新 Homebrew 版本 | 已验证 | - |
+| whisper.cpp | 本地编译版本 | 已验证 | - |
+| 浏览器（看板） | Safari 17+ / Chrome 120+ / Firefox 120+ | Safari | Chrome / Firefox |
 
 ---
 
@@ -503,15 +819,28 @@ bash scripts/restart_callback.sh            # 重启 Flask 回调服务
 | `上传 [保存路径]` / `下载 <路径>` / `分享 <路径>` | 4号AI：文件传输 |
 | `创建目录 <路径>` | 4号AI：创建目录 |
 | `帮助` | 4号AI：帮助 |
-| `#5 sys status` / `#5 sys disk` / `#5 sys mem` / `#5 sys load` | 5号AI：系统状态 |
-| `#5 svc start <name>` / `#5 svc stop <name>` / `#5 svc restart <name>` / `#5 svc list` | 5号AI：服务管理 |
-| `#5 ps list` / `#5 ps kill <pid>` | 5号AI：进程管理 |
-| `#5 log <name> [lines]` / `#5 log search <keyword>` | 5号AI：日志查看 |
-| `#5 backup now` / `#5 backup list` / `#5 backup restore <id>` | 5号AI：备份管理 |
+| `#5 sys status` / `#5 sys disk` / `#5 sys mem` / `#5 sys load` | 5号AI：系统状态（❌ 待实现） |
+| `#5 svc start <name>` / `#5 svc stop <name>` / `#5 svc restart <name>` / `#5 svc list` | 5号AI：服务管理（❌ 待实现） |
+| `#5 ps list` / `#5 ps kill <pid>` | 5号AI：进程管理（❌ 待实现） |
+| `#5 log <name> [lines]` / `#5 log search <keyword>` | 5号AI：日志查看（❌ 待实现） |
+| `#5 backup now` / `#5 backup list` / `#5 backup restore <id>` | 5号AI：备份管理（❌ 待实现） |
 | `#办公 help` / `#办公 ppt <文案>` | 2号AI：办公帮助 / 生成 PPT |
 | `转PPT` | 2号AI：将上次分析文档转为 PPT |
 | `#5 help` | 5号AI：帮助 |
 | `clear` | 清空对话历史 |
+
+## 回归测试
+
+```bash
+venv/bin/python3 scripts/regression_test.py                          # 全量 105 项测试
+venv/bin/python3 scripts/regression_test.py --module shared          # 仅共享模块
+venv/bin/python3 scripts/regression_test.py --module chat            # 仅 1号AI
+venv/bin/python3 scripts/regression_test.py --module office          # 仅 2号AI
+venv/bin/python3 scripts/regression_test.py --module life            # 仅 3号AI
+venv/bin/python3 scripts/regression_test.py --module file            # 仅 4号AI
+venv/bin/python3 scripts/regression_test.py --module sys             # 仅 5号AI
+venv/bin/python3 scripts/regression_test.py --module callback        # 仅回调服务
+```
 
 ## Python 模块速查
 
@@ -534,7 +863,7 @@ bash scripts/restart_callback.sh            # 重启 Flask 回调服务
 | `file-assistant/src/file_manager.py` | `cmd_ls(path)`, `cmd_find(name)`, `cmd_cat(path)`(含图片/PDF预览), `cmd_cp(src,dst)`, `cmd_mv(src,dst)`, `cmd_trash(path)`, `cmd_mkdir(path)` |
 | `file-assistant/src/file_transfer.py` | `cmd_share(path, target_id)` → 通过飞书发送文件 |
 | `file-assistant/src/security.py` | `validate_path(path)` → 白名单校验, `check_file_operation(path, op)` → 操作权限校验 |
-| `file-assistant/src/file_bot_server.py` | 独立 Flask 服务(端口5002)，处理飞书 webhook |
+| `file-assistant/src/file_bot_server.py` | 独立 Flask 服务（测试环境:5102 / 主环境:5002），处理飞书 webhook |
 | `sys-assistant/src/system_monitor.py` | `cmd_status()`, `cmd_disk()`, `cmd_mem()`, `cmd_load()` |
 | `sys-assistant/src/service_manager.py` | `cmd_service_start(name)`, `cmd_service_stop(name)`, `cmd_service_restart(name)`, `cmd_service_list()` |
 | `sys-assistant/src/process_manager.py` | `cmd_ps_list()`, `cmd_ps_kill(pid)` |
@@ -547,7 +876,7 @@ bash scripts/restart_callback.sh            # 重启 Flask 回调服务
 | `shared/knowledge_base.py` | `search(query, top_k=3, min_score=0.15)` v2.2 BM25 |
 | `shared/speech_utils.py` | `transcribe_audio(path)`, `convert_opus_to_wav()` |
 
-## 测试
+## 辅助测试（按需）
 
 ```bash
 python3 assistants/chat-assistant/tests/test_chat.py                   # 1号AI 单元测试
@@ -588,6 +917,7 @@ python3 scripts/diagnose.py     # 环境核验
 - 2号AI 改用 `#办公` 前缀（替代 `#2`/`#office`），`转PPT` 可直接发送无需前缀
 - 3号AI 改用中文关键词路由（日程/健康/旅行/锻炼/工作/看板），替代 `#3`/`#life` 前缀
 - 回复格式简化：无思考过程、无分隔线、时间直接放在问题/回答前
+- 回归测试使用 `venv/bin/python3 scripts/regression_test.py`（全局 venv Python 3.12.13），系统 Python 3.9 会因缺少依赖而跳过 23 项
 
 ## 文件访问隔离
 

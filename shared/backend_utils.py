@@ -36,6 +36,13 @@ def get_backend_config() -> dict:
     try:
         if config_path.exists():
             cfg = yaml.safe_load(config_path.read_text())
+            chat_api_url = cfg.get("chat_api_url", "")
+            if chat_api_url:
+                return {
+                    "backend": "free-api-hub",
+                    "api_url": chat_api_url,
+                    "model": cfg.get("chat_model", "free-api-hub-chat"),
+                }
             backend = cfg.get("backend", "llama.cpp")
             port = cfg.get("ollama_port", 11434) if backend == "ollama" else cfg.get("llama_port", 8080)
             model = cfg.get("ollama_model", "qwen2.5:7b") if backend == "ollama" else "gpt-3.5-turbo"
@@ -62,8 +69,12 @@ def wake_model():
 def call_api(messages: list, temperature: float = 0.3, max_tokens: int = 1024) -> str:
     """流式调用推理后端 API，返回回复文本"""
     cfg = get_backend_config()
-    wake_model()
-    api_url = f"http://localhost:{cfg['port']}/v1/chat/completions"
+
+    if cfg.get("backend") == "free-api-hub":
+        api_url = cfg["api_url"] + "/chat/completions"
+    else:
+        wake_model()
+        api_url = f"http://localhost:{cfg['port']}/v1/chat/completions"
     try:
         resp = requests.post(
             api_url,

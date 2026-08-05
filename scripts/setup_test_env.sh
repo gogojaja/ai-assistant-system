@@ -19,11 +19,7 @@ echo "  venv-file..."
 python3.12 -m venv assistants/file-assistant/venv-file 2>/dev/null || python3 -m venv assistants/file-assistant/venv-file
 assistants/file-assistant/venv-file/bin/pip install flask requests pyyaml python-dotenv 2>&1 | tail -1
 
-echo "  venv-sys..."
-python3.12 -m venv assistants/sys-assistant/venv-sys 2>/dev/null || python3 -m venv assistants/sys-assistant/venv-sys
-assistants/sys-assistant/venv-sys/bin/pip install flask requests pyyaml python-dotenv psutil 2>&1 | tail -1
-
-echo "  venv-office..."
+  echo "  venv-office..."
 python3.12 -m venv assistants/office-assistant/venv-office 2>/dev/null || python3 -m venv assistants/office-assistant/venv-office
 assistants/office-assistant/venv-office/bin/pip install flask requests pyyaml python-dotenv \
   openpyxl python-docx python-pptx watchdog 2>&1 | tail -1
@@ -33,7 +29,6 @@ echo "=== 创建 symlink（Python import 兼容） ==="
 cd assistants
 ln -sf chat-assistant chat_assistant
 ln -sf office-assistant office_assistant
-ln -sf sys-assistant sys_assistant
 cd ..
 
 echo ""

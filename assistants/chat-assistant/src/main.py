@@ -31,7 +31,8 @@ from search import search_web, search_archive, format_results
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(asctime)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-PROMPTS_DIR = Path("/Users/gogo/ai-assistant-system/prompts")
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+PROMPTS_DIR = _PROJECT_ROOT / "prompts"
 MODEL_NAME = "qwen2.5:7b"
 MAX_HISTORY_TURNS = 10
 
@@ -63,14 +64,13 @@ def _save_custom_prompt(open_id, text):
 
 def _get_backend_config():
     """从 settings.yaml 读取后端配置"""
-    import yaml
-    config_path = Path("/Users/gogo/ai-assistant-system/config/settings.yaml")
+    config_path = _PROJECT_ROOT / "config" / "settings.yaml"
     try:
         if config_path.exists():
             cfg = yaml.safe_load(config_path.read_text())
             backend = cfg.get("backend", "llama.cpp")
             port = cfg.get("ollama_port", 11434) if backend == "ollama" else cfg.get("llama_port", 8080)
-            return {"backend": backend, "port": port, "model": cfg.get("ollama_model", "qwen2.5:7b") if backend == "ollama" else "gpt-3.5-turbo"}
+            return {"backend": backend, "port": port, "model": "gpt-3.5-turbo"}
     except:
         pass
     return {"backend": "llama.cpp", "port": 8080, "model": "gpt-3.5-turbo"}
@@ -93,7 +93,7 @@ def _inject_system_context(messages, open_id=""):
     weekdays = ["星期一","星期二","星期三","星期四","星期五","星期六","星期日"]
     time_str = f"{now.strftime('%Y年%m月%d日')} {weekdays[now.weekday()]} {now.strftime('%H:%M')}"
     location = "北京"
-    config_path = Path("/Users/gogo/ai-assistant-system/config/settings.yaml")
+    config_path = _PROJECT_ROOT / "config" / "settings.yaml"
     try:
         if config_path.exists():
             cfg = yaml.safe_load(config_path.read_text())
@@ -104,12 +104,16 @@ def _inject_system_context(messages, open_id=""):
     content = (
         f"当前时间：{time_str}\n"
         f"当前城市：{location}\n"
-        "你是1号AI闲聊助理，根据对话历史和已有知识回答用户的问题。\n"
-        "回答时注意：直接输出最终回答，不要输出推理过程。用自然的中文分段，"
-        "每段不超过3句话。根据问题灵活调整风格——解释类先概括再展开，"
-        "闲聊/讲故事/笑话直接输出就好。列举时用数字序号（1. 2. 3.），"
-        "不要用markdown符号。不确定的信息要说明「据我所知」或「可能」，"
-        "不编造。回答简洁，控制在300字以内。"
+        "你是1号AI闲聊助理。回答问题请注意：\n"
+        "1. 直接输出最终回答，不要输出推理过程。用自然的中文分段，每段不超过3句话。\n"
+        "2. 根据问题灵活调整风格——解释类先概括再展开，闲聊/讲故事/笑话直接输出。列举时用数字序号（1. 2. 3.），不要用markdown符号。\n"
+        "3. 不确定的信息要说明「据我所知」或「可能」，不编造。回答简洁，控制在300字以内。\n"
+        "【联网搜索规则】你的训练数据截止于2025年。当用户消息中包含了【联网搜索结果】时，必须按以下步骤回答：\n"
+        "① 逐条检查每个<item>的<title>和<snippet>是否直接包含用户问题的答案\n"
+        "② 只有当搜索结果中明确出现答案（如具体比分、确切数值、原文引用）时，才基于搜索结果回答\n"
+        "③ 如果搜索结果仅包含背景介绍、历史赛程、通用描述，而无用户追问的具体实时信息，必须回答：「搜索结果未提供相关信息」\n"
+        "④ 绝对禁止使用训练数据补全、推断或编造任何实时数据\n"
+        "⑤ 绝对禁止从通用描述中推导具体答案"
     )
     custom = _load_custom_prompt(open_id)
     if custom:
@@ -190,30 +194,44 @@ def talk(messages, open_id=""):
     _inject_system_context(messages, open_id)
     messages = trim_history(messages)
     cfg = _get_backend_config()
-    _wake_model(cfg)
-    api_url = f"http://localhost:{cfg['port']}/v1/chat/completions"
+    if cfg['backend'] != 'free-api-hub':
+        _wake_model(cfg)
+        api_url = f"http://localhost:{cfg['port']}/v1/chat/completions"
+    else:
+        api_url = cfg['api_url'] + "/chat/completions"
     api_model = cfg['model']
-    logger.debug(f"后端={cfg['backend']} 端口={cfg['port']} 模型={api_model} 消息数={len(messages)}")
+    logger.debug(f"后端={cfg['backend']} 端口={cfg.get('port','?')} 模型={api_model} 消息数={len(messages)}")
     full_content = ""
     full_reasoning = ""
 
-    try:
-        resp = requests.post(
-            api_url,
-            json={
-                "model": api_model,
-                "messages": messages,
-                "temperature": 0.7,
-                "max_tokens": 2048,
-                "stream": True
-            },
-            timeout=60,
-            stream=True
-        )
-        if resp.status_code != 200:
-            logger.error(f"llama-server 返回错误: {resp.status_code}")
-            return "抱歉，AI 服务暂时不可用，请稍后重试。"
+    import time as _time
+    request_body = {
+        "model": api_model,
+        "messages": messages,
+        "temperature": 0.7,
+        "max_tokens": 2048,
+        "stream": True
+    }
+    for attempt in range(3):
+        try:
+            resp = requests.post(api_url, json=request_body, timeout=60, stream=True)
+        except requests.ConnectionError as _ce:
+            logger.warning(f"llama-server 连接失败（尝试 {attempt+1}/3）: {_ce}")
+            if attempt < 2:
+                _time.sleep(1.5)
+            continue
+        if resp.status_code == 200:
+            break
+        resp_body = resp.text[:500] if resp.text else '(empty)'
+        logger.error(f"llama-server 返回 {resp.status_code}（尝试 {attempt+1}/3）body={resp_body}")
+        logger.error(f"请求体消息数={len(request_body['messages'])} 总字符={sum(len(m.get('content','')) for m in request_body['messages'])}")
+        if attempt < 2:
+            _time.sleep(1.5)
+    else:
+        logger.error(f"llama-server 连续 3 次失败")
+        return "抱歉，AI 服务暂时不可用，请稍后重试。"
 
+    try:
         resp.encoding = 'utf-8'
 
         for line in resp.iter_lines(decode_unicode=True):
@@ -295,7 +313,10 @@ def _fallback_with_postprocess(messages):
     """
     import requests, re
     _cfg = _get_backend_config()
-    _api_url = f"http://localhost:{_cfg['port']}/v1/chat/completions"
+    if _cfg['backend'] != 'free-api-hub':
+        _api_url = f"http://localhost:{_cfg['port']}/v1/chat/completions"
+    else:
+        _api_url = _cfg['api_url'] + "/chat/completions"
     _api_model = _cfg['model']
     try:
         resp = requests.post(

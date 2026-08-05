@@ -1,5 +1,551 @@
 [
   {
+    "query": "Python",
+    "timestamp": "2026-06-13 16:52:16",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2025年12月15日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开 …"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明， …"
+      },
+      {
+        "title": "Python安装与环境配置全程详细教学（包含Windows版和 ...",
+        "url": "https://blog.csdn.net/sensen_kiss/article/details/141940274",
+        "snippet": "2024年9月21日 · 对于初学者的Python该怎么安装，需要做哪些设置，如何使用Python等问题的教学。 适用于Windows用户和Mac用户，并 …"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "2026年5月22日 · 简介 廖雪峰 资深软件开发工程师，业余马拉松选手。 这是小白的Python新手教程，具有如下特点： 中文，免费，零起点， …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-06-13 16:52:16",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-06-13 16:52:05",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2025年12月15日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开 …"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明， …"
+      },
+      {
+        "title": "Python安装与环境配置全程详细教学（包含Windows版和 ...",
+        "url": "https://blog.csdn.net/sensen_kiss/article/details/141940274",
+        "snippet": "2024年9月21日 · 对于初学者的Python该怎么安装，需要做哪些设置，如何使用Python等问题的教学。 适用于Windows用户和Mac用户，并 …"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "2026年5月22日 · 简介 廖雪峰 资深软件开发工程师，业余马拉松选手。 这是小白的Python新手教程，具有如下特点： 中文，免费，零起点， …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-06-13 16:52:05",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-06-13 16:51:54",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support and facilitate the growth of a diverse and international …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2025年12月15日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开发人员，Python 都易于学习和使用。 从我们的新手指南开始"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明，第一个公开发行版发行于 1991 年。 像 Perl 语言一样, Python 源代码同样遵循 …"
+      },
+      {
+        "title": "Python安装与环境配置全程详细教学（包含Windows版和 ...",
+        "url": "https://blog.csdn.net/sensen_kiss/article/details/141940274",
+        "snippet": "2024年9月21日 · 对于初学者的Python该怎么安装，需要做哪些设置，如何使用Python等问题的教学。 适用于Windows用户和Mac用户，并且在本教学中对所有步骤都有文字教学和配套图片步骤，并且里面每一步的影 …"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "2026年5月22日 · 简介 廖雪峰 资深软件开发工程师，业余马拉松选手。 这是小白的Python新手教程，具有如下特点： 中文，免费，零起点，完整示例，基于最新的Python 3版本。 Python是一种计算机程序设计语言。"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-06-13 16:51:53",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-05-28 22:22:14",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support and facilitate the growth of a diverse and international …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2026年2月4日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开发人员，Python 都易于学习和使用。 从我们的新手指南开始"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明，第一个公开发行版发行于 1991 年。 像 Perl 语言一样, Python 源代码同样遵循 …"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "6 天之前 · 用Python可以做什么？ 可以做日常任务，比如自动备份你的MP3；可以做网站，很多著名的网站包括YouTube就是Python写的；可以做网络游戏的后台，很多在线游戏的后台都是Python开发的。 总之就是 …"
+      },
+      {
+        "title": "Python 教程",
+        "url": "https://www.w3school.com.cn/python/index.asp",
+        "snippet": "Python 教程 学习 Python Python 是一门编程语言。 您可以在服务器上使用 Python 来创建 Web 应用程序。 现在就开始学习 Python 通过实例学习 我们的 TIY 编辑器使学习 Python 变得简单，它能够同时显示代码和结 …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-05-28 22:22:13",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-05-28 22:08:34",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support and facilitate the growth of a diverse and international …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2026年2月4日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开发人员，Python 都易于学习和使用。 从我们的新手指南开始"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明，第一个公开发行版发行于 1991 年。 像 Perl 语言一样, Python 源代码同样遵循 …"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "6 天之前 · 用Python可以做什么？ 可以做日常任务，比如自动备份你的MP3；可以做网站，很多著名的网站包括YouTube就是Python写的；可以做网络游戏的后台，很多在线游戏的后台都是Python开发的。 总之就是 …"
+      },
+      {
+        "title": "Python 教程",
+        "url": "https://www.w3school.com.cn/python/index.asp",
+        "snippet": "Python 教程 学习 Python Python 是一门编程语言。 您可以在服务器上使用 Python 来创建 Web 应用程序。 现在就开始学习 Python 通过实例学习 我们的 TIY 编辑器使学习 Python 变得简单，它能够同时显示代码和结 …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-05-28 22:08:33",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-05-28 20:58:42",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support …"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明， …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2026年2月4日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开发 …"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "6 天之前 · 简介 廖雪峰 资深软件开发工程师，业余马拉松选手。 这是小白的Python新手教程，具有如下特点： 中文，免费，零起点，完整示 …"
+      },
+      {
+        "title": "Python中文网",
+        "url": "https://python.github.net.cn/",
+        "snippet": "2023年11月9日 · Experienced programmers in any other language can pick up Python very quickly, and beginners find the clean syntax …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-05-28 20:58:41",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-05-28 20:57:51",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support …"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明， …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2026年2月4日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开发 …"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "6 天之前 · 简介 廖雪峰 资深软件开发工程师，业余马拉松选手。 这是小白的Python新手教程，具有如下特点： 中文，免费，零起点，完整示 …"
+      },
+      {
+        "title": "Python中文网",
+        "url": "https://python.github.net.cn/",
+        "snippet": "2023年11月9日 · Experienced programmers in any other language can pick up Python very quickly, and beginners find the clean syntax …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-05-28 20:57:50",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-05-28 20:56:45",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support and facilitate the growth of a diverse and international …"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明，第一个公开发行版发行于 1991 年。 像 Perl 语言一样, Python 源代码同样遵循 …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2026年2月4日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开发人员，Python 都易于学习和使用。 从我们的新手指南开始"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "6 天之前 · 简介 廖雪峰 资深软件开发工程师，业余马拉松选手。 这是小白的Python新手教程，具有如下特点： 中文，免费，零起点，完整示例，基于最新的Python 3版本。 Python是一种计算机程序设计语言。"
+      },
+      {
+        "title": "Python中文网",
+        "url": "https://python.github.net.cn/",
+        "snippet": "2023年11月9日 · Experienced programmers in any other language can pick up Python very quickly, and beginners find the clean syntax and indentation structure easy to learn. Whet your appetite with our …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-05-28 20:56:45",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-05-28 20:24:13",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support and facilitate the growth of a diverse and international …"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明，第一个公开发行版发行于 1991 年。 像 Perl 语言一样, Python 源代码同样遵循 …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2026年2月4日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开发人员，Python 都易于学习和使用。 从我们的新手指南开始"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "6 天之前 · 简介 廖雪峰 资深软件开发工程师，业余马拉松选手。 这是小白的Python新手教程，具有如下特点： 中文，免费，零起点，完整示例，基于最新的Python 3版本。 Python是一种计算机程序设计语言。"
+      },
+      {
+        "title": "Python中文网",
+        "url": "https://python.github.net.cn/",
+        "snippet": "2023年11月9日 · Experienced programmers in any other language can pick up Python very quickly, and beginners find the clean syntax and indentation structure easy to learn. Whet your appetite with our …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-05-28 20:24:13",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-05-28 20:23:56",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support and facilitate the growth of a diverse and international …"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明，第一个公开发行版发行于 1991 年。 像 Perl 语言一样, Python 源代码同样遵循 …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2026年2月4日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开发人员，Python 都易于学习和使用。 从我们的新手指南开始"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "6 天之前 · 简介 廖雪峰 资深软件开发工程师，业余马拉松选手。 这是小白的Python新手教程，具有如下特点： 中文，免费，零起点，完整示例，基于最新的Python 3版本。 Python是一种计算机程序设计语言。"
+      },
+      {
+        "title": "Python中文网",
+        "url": "https://python.github.net.cn/",
+        "snippet": "2023年11月9日 · Experienced programmers in any other language can pick up Python very quickly, and beginners find the clean syntax and indentation structure easy to learn. Whet your appetite with our …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-05-28 20:23:56",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-05-28 20:23:37",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support and facilitate the growth of a diverse and international …"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明，第一个公开发行版发行于 1991 年。 像 Perl 语言一样, Python 源代码同样遵循 …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2026年2月4日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开发人员，Python 都易于学习和使用。 从我们的新手指南开始"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "6 天之前 · 简介 廖雪峰 资深软件开发工程师，业余马拉松选手。 这是小白的Python新手教程，具有如下特点： 中文，免费，零起点，完整示例，基于最新的Python 3版本。 Python是一种计算机程序设计语言。"
+      },
+      {
+        "title": "Python中文网",
+        "url": "https://python.github.net.cn/",
+        "snippet": "2023年11月9日 · Experienced programmers in any other language can pick up Python very quickly, and beginners find the clean syntax and indentation structure easy to learn. Whet your appetite with our …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-05-28 20:23:36",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-05-28 20:21:56",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support and facilitate the growth of a diverse and international …"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明，第一个公开发行版发行于 1991 年。 像 Perl 语言一样, Python 源代码同样遵循 …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2026年2月4日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开发人员，Python 都易于学习和使用。 从我们的新手指南开始"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "6 天之前 · 简介 廖雪峰 资深软件开发工程师，业余马拉松选手。 这是小白的Python新手教程，具有如下特点： 中文，免费，零起点，完整示例，基于最新的Python 3版本。 Python是一种计算机程序设计语言。"
+      },
+      {
+        "title": "Python中文网",
+        "url": "https://python.github.net.cn/",
+        "snippet": "2023年11月9日 · Experienced programmers in any other language can pick up Python very quickly, and beginners find the clean syntax and indentation structure easy to learn. Whet your appetite with our …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-05-28 20:21:56",
+    "results": [
+      {
+        "title": "T",
+        "url": "",
+        "snippet": "S"
+      }
+    ]
+  },
+  {
+    "query": "Python",
+    "timestamp": "2026-05-28 20:20:01",
+    "results": [
+      {
+        "title": "Welcome to Python.org",
+        "url": "https://www.python.org/",
+        "snippet": "The mission of the Python Software Foundation is to promote, protect, and advance the Python programming language, and to support …"
+      },
+      {
+        "title": "Python 基础教程 | 菜鸟教程",
+        "url": "https://www.runoob.com/python/python-tutorial.html",
+        "snippet": "Python 基础教程 Python 是一种解释型、面向对象、动态数据类型的高级程序设计语言。 Python 由 Guido van Rossum 于 1989 年底发明， …"
+      },
+      {
+        "title": "欢迎来到 Python.org - Python 编程语言",
+        "url": "https://pythonlang.cn/",
+        "snippet": "2026年2月4日 · Python 是一种能让你快速工作 并更有效地集成系统的编程语言。 了解更多 开始使用 无论您是编程新手还是经验丰富的开发 …"
+      },
+      {
+        "title": "简介 - Python教程 - 廖雪峰的官方网站",
+        "url": "https://www.liaoxuefeng.com/wiki/1016959663602400",
+        "snippet": "6 天之前 · 简介 廖雪峰 资深软件开发工程师，业余马拉松选手。 这是小白的Python新手教程，具有如下特点： 中文，免费，零起点，完整示 …"
+      },
+      {
+        "title": "Python中文网",
+        "url": "https://python.github.net.cn/",
+        "snippet": "2023年11月9日 · Experienced programmers in any other language can pick up Python very quickly, and beginners find the clean syntax …"
+      }
+    ]
+  },
+  {
+    "query": "测试查询",
+    "timestamp": "2026-05-28 20:20:00",
+    "results": [
+      {
+        "title": "测试标题",
+        "url": "",
+        "snippet": "测试内容"
+      }
+    ]
+  },
+  {
     "query": "验收测试",
     "timestamp": "2026-05-25 16:39:54",
     "results": [

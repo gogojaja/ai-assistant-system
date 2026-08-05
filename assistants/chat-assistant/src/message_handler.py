@@ -113,14 +113,10 @@ def _load_history(open_id: str) -> list:
     path = _history_path(open_id)
     if os.path.exists(path):
         raw = open(path, 'r', encoding='utf-8').read()
-        if raw.startswith("gAAAA"):
-            try:
-                from shared.crypto import decrypt_json
-                return decrypt_json(raw)
-            except Exception as e:
-                logger.warning(f"解密对话历史失败，已丢弃: {e}")
-                raw = ""
-        return json.loads(raw) if raw else []
+        try:
+            return json.loads(raw) if raw else []
+        except:
+            pass
     return []
 
 
@@ -128,10 +124,8 @@ def _save_history(open_id: str, messages: list):
     path = _history_path(open_id)
     max_msgs = 2 * MAX_HISTORY_TURNS
     trimmed = messages[-max_msgs:] if len(messages) > max_msgs else messages
-    from shared.crypto import encrypt_json
-    encrypted = encrypt_json(trimmed)
     with open(path, 'w', encoding='utf-8') as f:
-        f.write(encrypted)
+        json.dump(trimmed, f, ensure_ascii=False, indent=2)
 
 
 def _clear_history(open_id: str):
@@ -214,13 +208,6 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
             send_message(target_id, reply, receive_id_type=receive_id_type)
             return
 
-        # 搜索指令
-        if user_text.startswith("搜索"):
-            query = user_text[2:].strip()
-            reply = handle_search(query) if query else "请告诉我你要搜索什么。"
-            send_message(target_id, reply, receive_id_type=receive_id_type)
-            return
-
         # 翻译指令
         if user_text.startswith("翻译"):
             to_trans = user_text.replace('翻译', '', 1).lstrip(':：').strip()
@@ -243,20 +230,21 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
                 day_offset = 1
             elif "今天" in user_text or "现在" in user_text or "当前" in user_text:
                 day_offset = 0
-            # 提取城市
+            # 提取城市：先去除"查一下""帮我""看看"等非城市前缀
             city = None
+            clean_text = re.sub(r'^(能不能帮我|帮我查一下|帮我查|帮我看看|查一下|看一下|有没有|能帮我|查下|看下|麻烦|帮我|看看|查|看|帮|请)\s*', '', user_text)
             patterns = [
                 r'(.+?)今天的天气', r'(.+?)明天的天气',
                 r'(.+?)后天的天气', r'(.+?)的天气',
             ]
             for pattern in patterns:
-                m = re.search(pattern, user_text)
+                m = re.search(pattern, clean_text)
                 if m:
                     city = normalize_city_for_weather(m.group(1))
                     if city:
                         break
             if not city:
-                city = normalize_city_for_weather(user_text)
+                city = normalize_city_for_weather(clean_text)
             if not city:
                 city = get_city_from_config_or_default()
             weather_result = get_weather(city, day_offset=day_offset)
@@ -289,7 +277,6 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
             send_message(target_id, reply, receive_id_type=receive_id_type)
             return
 
-        # 闲聊：加载历史 → 追加 → 调用 talk → 追加回复 → 保存 → 发送
         if TALK_AVAILABLE:
             history = _load_history(uid)
 
@@ -318,21 +305,42 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
 
             history.append({"role": "user", "content": user_text})
 
-            # 自动检索知识库，注入上下文（不修改原始 history）
-            kb_context = None
-            try:
-                from shared.knowledge_base import search as _kb_search
-                _kb_results = _kb_search(user_text, top_k=2, user_id=uid)
-                if _kb_results:
-                    kb_context = "\n\n相关知识：\n" + "\n".join(f"- {r['text'][:200]}" for r in _kb_results)
-            except Exception:
-                pass
-
             _thinking_msg_id = None
+            _search_mode = False
 
-            chat_messages = list(history)
-            if kb_context:
-                chat_messages.insert(-1, {"role": "system", "content": kb_context})
+            # 自动联网搜索，结果嵌入用户消息（模型上下文有限，搜索时只保留当前轮）
+            try:
+                from shared.utils import search_web
+                _web_results = search_web(user_text)
+                if _web_results.get("success") and _web_results.get("results"):
+                    items = []
+                    for r in _web_results["results"][:5]:
+                        snippet = r['snippet'][:300] if r.get('snippet') else ''
+                        items.append(f"<item>\n<title>{r['title']}</title>\n<url>{r.get('url','')}</url>\n<snippet>{snippet}</snippet>\n</item>")
+                    if items:
+                        enriched = (
+                            "【联网搜索结果】\n"
+                            + "\n".join(items) +
+                            "\n\n【指令】你的训练数据截止于2025年，你无法知道2025年之后的任何实时信息。\n"
+                            "请先逐条核对每个<item>：\n"
+                            "1. <title>和<snippet>是否直接包含用户问题的具体答案（如：具体比分、确切数值、原文引用）？\n"
+                            "2. 是否仅为背景介绍/历史赛程/通用描述，而无用户追问的具体实时信息？\n"
+                            "只有当搜索结果中明确出现答案时，才基于搜索结果回答；否则必须回答：「搜索结果未提供相关信息」。\n"
+                            "严禁使用训练数据补全、推断或编造实时数据；严禁从通用描述中推导具体答案。\n\n"
+                            f"用户问题：{user_text}"
+                        )
+                        _search_mode = True
+                        chat_messages = [{"role": "user", "content": enriched}]
+                    else:
+                        chat_messages = list(history[-2:])
+                else:
+                    chat_messages = list(history[-2:])
+            except Exception:
+                chat_messages = list(history[-2:])
+
+            logger.info(f"[DEBUG] 传入 talk() 消息数={len(chat_messages)} 搜索模式={_search_mode} 历史长度={len(history)}")
+
+
 
             try:
                 reply = talk(chat_messages, open_id=uid)
@@ -345,14 +353,6 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
             # 对问候/身份问题追加帮助引导
             if user_text in ("你好", "你是谁"):
                 reply += "\n\n💡 可以通过「帮助」来查看所有功能"
-
-            # 在回复尾部添加记忆轮次提示（累计轮次，超过上限时单独标记）
-            if reply not in ("处理出错，请稍后重试。", "抱歉，我暂时无法回复，请稍后再试。"):
-                total_turns = _load_counter(uid) + 1
-                if total_turns > MAX_HISTORY_TURNS:
-                    total_turns = 1
-                _save_counter(uid, total_turns)
-                reply += f"\n⏳ 已记忆 {total_turns}/{MAX_HISTORY_TURNS} 轮"
 
             # 引用提问 + 时间戳头
             display_reply = _quote_reply_header(user_text, reply, question_time=question_time)
@@ -397,7 +397,6 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
                 try:
                     clean = reply
                     import re as _re_strip
-                    clean = _re_strip.sub(r'\n\n⏳ 已记忆 \d+/\d+ 轮$', '', clean)
                     clean = _re_strip.sub(r'\n\n💡 可以通过.*$', '', clean)
                     history.append({"role": "assistant", "content": clean})
                     _save_history(uid, history)

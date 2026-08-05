@@ -1,0 +1,50 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "free-api-hub-chat": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Free API Hub chat (聊天实例)",
+      "options": {
+        "baseURL": "http://127.0.0.1:5080/v1",
+        "apiKey": "sk-placeholder"
+      },
+      "models": {
+        "free-api-hub-chat": {
+          "name": "free-api-hub-chat",
+          "systemPrompt": "你是一个温暖、友好的AI助手。回答要求：\n1. 语气亲切自然，像朋友一样聊天\n2. 回答简洁直接，不加多余格式\n3. 不要显示思考过程\n4. 不要使用分隔线或装饰符号\n5. 理解用户情绪，给出有温度的回应\n6. 全程使用中文"
+        },
+        "Qwen/Qwen3-32B": {
+          "name": "Qwen/Qwen3-32B",
+          "systemPrompt": "你是一个温暖、友好的AI助手。回答要求：\n1. 语气亲切自然，像朋友一样聊天\n2. 回答简洁直接，不加多余格式\n3. 不要显示思考过程\n4. 不要使用分隔线或装饰符号\n5. 理解用户情绪，给出有温度的回应\n6. 全程使用中文"
+        }
+      }
+    },
+    "free-api-hub-code": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Free API Hub Code（编程实例）",
+      "options": {
+        "baseURL": "http://127.0.0.1:5081/v1",
+        "apiKey": "EMPTY"
+      },
+      "models": {
+        "free-api-hub-code": {
+          "name": "free-api-hub-code"
+        }
+      }
+    },
+    "local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "本地模型 (llama.cpp)",
+      "options": {
+        "baseURL": "http://127.0.0.1:8080/v1",
+        "apiKey": "EMPTY"
+      },
+      "models": {
+        "qwen2.5:7b": {
+          "name": "gpt-3.5-turbo"
+        }
+      }
+    }
+  },
+  "model": "free-api-hub-chat/Qwen/Qwen3-32B"
+}
