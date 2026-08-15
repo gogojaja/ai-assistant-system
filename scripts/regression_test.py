@@ -768,6 +768,70 @@ def test_office():
     _test("PPT 空文本", test_ppt_empty_text)
     _test("PPT 结构化生成", test_ppt_generate)
 
+    # ---- 外部文档工具适配层（external_doc_tools）----
+    def test_ext_check_ready():
+        check_ready = _safe_import("external_doc_tools", "check_external_ready")
+        if not check_ready:
+            raise ImportError("external_doc_tools 模块未加载")
+        status = check_ready()
+        assert isinstance(status, dict)
+        assert "pptagent_ready" in status and "dashi_ready" in status
+        assert "any_ready" in status
+
+    def test_ext_pptagent_empty_prompt():
+        generate = _safe_import("external_doc_tools", "generate_ppt_via_pptagent")
+        if not generate:
+            raise ImportError("external_doc_tools 模块未加载")
+        ok, res = generate("", "/tmp/nonexist.pptx")
+        assert ok is False
+        assert "不能为空" in res
+
+    def test_ext_dashi_empty_prompt():
+        generate = _safe_import("external_doc_tools", "generate_ppt_via_dashi")
+        if not generate:
+            raise ImportError("external_doc_tools 模块未加载")
+        ok, res = generate("", "/tmp/nonexist.pptx")
+        assert ok is False
+        assert "不能为空" in res
+
+    def test_ext_goal_json():
+        build = _safe_import("external_doc_tools", "_build_goal_json")
+        if not build:
+            raise ImportError("external_doc_tools 模块未加载")
+        goal = build("周报", "周报标题", "theme01", 3)
+        import json
+        data = json.loads(goal)
+        assert data["schemaVersion"] == 2
+        assert data["themePack"] == "theme01"
+        assert len(data["slides"]) == 3
+        assert "schemaVersion" in goal
+
+    def test_ext_summarize_empty():
+        summarize = _safe_import("external_doc_tools", "summarize_doc_via_external")
+        if not summarize:
+            raise ImportError("external_doc_tools 模块未加载")
+        text, ok = summarize("")
+        assert ok is False
+        assert text == ""
+
+    def test_dh_generate_ppt_fallback():
+        # _generate_ppt 空文案时应返回失败而不抛异常
+        dh = _safe_load_from_file(
+            PROJECT_ROOT / "assistants/office-assistant/src/document_handler.py",
+            "_generate_ppt",
+        )
+        if not dh:
+            raise ImportError("document_handler 模块未加载")
+        ok, res = dh("", "/tmp/nonexist.pptx")
+        assert ok is False
+
+    _test("外部工具可用性探测", test_ext_check_ready)
+    _test("外部工具 PPTAgent 空提示词", test_ext_pptagent_empty_prompt)
+    _test("外部工具 dashi 空提示词", test_ext_dashi_empty_prompt)
+    _test("外部工具 goal.json 生成", test_ext_goal_json)
+    _test("外部工具摘要空文本", test_ext_summarize_empty)
+    _test("document_handler PPT 兜底", test_dh_generate_ppt_fallback)
+
     # ---- document_handler（纯函数单元） ----
     def test_dh_is_valid_summary():
         _is_valid_summary = _safe_load_from_file(

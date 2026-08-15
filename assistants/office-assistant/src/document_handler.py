@@ -1,6 +1,7 @@
 """
 模块名称：document_handler
 功能描述：文档处理（Word/Excel/PPT 文件下载、分析、摘要生成、PPT 生成、回复组装）
+        文档处理能力已弱化：PPT 生成优先委托外部工具（PPTAgent/dashi-ppt），摘要优先委托后端 LLM，本地 core 仅作兜底
 对外接口：
     - process_document_file(file_key, message_id, open_id, file_name): 处理文档消息
     - process_office_text(cmd_text, open_id, target_id, receive_id_type): 处理 #2/#office 文本命令
@@ -9,12 +10,14 @@
     - 第三方：无（requests/yaml 由 shared.backend_utils 托管）
     - 项目内：shared.feishu_api (download_file, send_message, send_file_message),
                shared.backend_utils (call_api, get_backend_config, clean_reply),
-               core.word_processor (WordProcessor),
-               core.summarizer (DocumentSummarizer),
-               core.excel_processor (ExcelProcessor),
-               core.ppt_generator (generate_presentation, generate_from_text)
-版本：v3.0
+               core.word_processor (WordProcessor, 兜底),
+               core.summarizer (DocumentSummarizer, 兜底),
+               core.excel_processor (ExcelProcessor, 兜底),
+               core.ppt_generator (generate_presentation, generate_from_text, 兜底),
+               external_doc_tools (generate_ppt_via_pptagent, generate_ppt_via_dashi, summarize_doc_via_external)
+版本：v3.1
 更新记录：
+    - 2026-08-16: 文档处理能力弱化，PPT 生成优先调 PPTAgent/dashi-ppt，摘要优先委托外部 LLM，本地 core 降为兜底
     - 2026-05-26: 新增 PPT 文件支持、#2/#office 文本命令、PPT 生成功能
     - 2026-05-23: 初始创建，从 callback_server.py 剥离文档处理逻辑，包含 Excel 智能摘要
     - 2026-05-25: Excel 摘要改用独立 API 调用，不再依赖 main.talk
@@ -48,6 +51,19 @@ except ImportError as e:
     DOC_PROCESSING_AVAILABLE = False
     doc_summarizer = None
     logger.error(f"文档处理模块导入失败: {e}")
+
+# 外部文档工具适配层（PPTAgent / dashi-ppt / 外部摘要）
+try:
+    from external_doc_tools import (
+        check_external_ready,
+        generate_ppt_via_pptagent,
+        generate_ppt_via_dashi,
+        summarize_doc_via_external,
+    )
+    EXTERNAL_TOOLS_AVAILABLE = True
+except ImportError as e:
+    EXTERNAL_TOOLS_AVAILABLE = False
+    logger.error(f"外部文档工具适配层导入失败: {e}")
 
 # 启动办公文件夹监控
 try:
@@ -101,6 +117,7 @@ def _build_fallback_summary(structure_hint: str, data_text: str) -> str:
 def generate_excel_summary(data_text: str, structure_hint: str = "") -> tuple:
     """
     生成 Excel 数据摘要，返回 (summary_text, is_ai)。
+    外部委托优先，本地 call_api 兜底，最后规则兜底。
     is_ai=True 表示 AI 生成，False 表示规则兜底。
     """
     stripped = data_text.strip()
@@ -128,6 +145,18 @@ def generate_excel_summary(data_text: str, structure_hint: str = "") -> tuple:
         if samples:
             concise_parts.append(f"样例数据：{'；'.join(samples)}")
         concise = "；".join(p for p in concise_parts if p)
+        # 外部摘要优先
+        if EXTERNAL_TOOLS_AVAILABLE:
+            try:
+                ext_summary, ext_ok = summarize_doc_via_external(
+                    stripped,
+                    hint=f"Excel 数据。数据概况：{concise}",
+                )
+                if ext_ok:
+                    return (ext_summary, True)
+            except Exception:
+                pass
+        # 本地 call_api 兜底
         hint = f"文件结构：{structure_hint}\n\n" if structure_hint else ""
         user_msg = (
             f"{hint}"
@@ -185,6 +214,51 @@ def _cache_doc_text(open_id: str, text: str, title: str = "文档内容"):
         _doc_cache.clear()
 
 
+def _generate_ppt(ppt_text: str, output_path: str, attachments: list = None) -> tuple:
+    """
+    统一 PPT 生成入口：优先外部工具（PPTAgent → dashi-ppt），本地 core 兜底。
+    返回 (success, result)：success=True 时 result 为输出路径，否则为错误信息。
+    """
+    if not ppt_text or not ppt_text.strip():
+        return (False, "文案为空")
+
+    # 1) 优先 PPTAgent（专业级）
+    if EXTERNAL_TOOLS_AVAILABLE:
+        try:
+            ok, res = generate_ppt_via_pptagent(
+                ppt_text, output_path, attachments=attachments, lang="zh"
+            )
+            if ok:
+                return (True, res)
+            logger.warning(f"PPTAgent 生成未成功，切换兜底: {res}")
+        except Exception as e:
+            logger.warning(f"PPTAgent 调用异常，切换兜底: {e}")
+
+        # 2) 其次 dashi-ppt
+        try:
+            ok, res = generate_ppt_via_dashi(ppt_text, output_path)
+            if ok:
+                return (True, res)
+            logger.warning(f"dashi-ppt 生成未成功，切换本地兜底: {res}")
+        except Exception as e:
+            logger.warning(f"dashi-ppt 调用异常，切换本地兜底: {e}")
+
+    # 3) 本地 core 兜底
+    try:
+        if not DOC_PROCESSING_AVAILABLE:
+            return (False, "文档处理服务未就绪")
+        from core.ppt_generator import generate_via_pandoc, generate_from_text
+        result = generate_via_pandoc(ppt_text, output_path)
+        if not result:
+            result = generate_from_text(ppt_text, output_path)
+        if result and os.path.getsize(result) > 1000:
+            return (True, result)
+        return (False, "本地 PPT 生成失败")
+    except Exception as e:
+        logger.error(f"本地 PPT 生成异常: {e}", exc_info=True)
+        return (False, f"本地 PPT 生成异常：{e}")
+
+
 _OFFICE_HELP = """
 📋 2号AI 办公助理 — 可用命令：
   #办公 help            — 显示此帮助
@@ -218,25 +292,21 @@ def process_office_text(cmd_text: str, open_id: str, target_id: str = "", receiv
         ppt_text = re.sub(r'^生成演示[：:]\s*', '', cmd_text).strip()
 
     if ppt_text:
-        send_message(target_id or open_id, "📊 正在生成专业级 PPT…", receive_id_type=receive_id_type)
+        send_message(target_id or open_id, "📊 正在生成 PPT（外部工具优先，预计 1-10 分钟）…", receive_id_type=receive_id_type)
         try:
             output_dir = PROJECT_ROOT / "data" / "office"
             output_dir.mkdir(parents=True, exist_ok=True)
             ts = int(__import__('time').time())
             output_path = str(output_dir / f"presentation_{ts}.pptx")
-            from core.ppt_generator import generate_via_pandoc, check_pandoc, generate_from_text
-            result = generate_via_pandoc(ppt_text, output_path)
-            if not result:
-                result = generate_from_text(ppt_text, output_path)
-            if result and os.path.getsize(result) > 1000:
-                ok = send_file_message(target_id or open_id, result, "专业演示文稿.pptx", receive_id_type=receive_id_type)
-                if not ok:
+            ok, result = _generate_ppt(ppt_text, output_path)
+            if ok and os.path.getsize(result) > 1000:
+                send_ok = send_file_message(target_id or open_id, result, "专业演示文稿.pptx", receive_id_type=receive_id_type)
+                if not send_ok:
                     send_message(target_id or open_id, "PPT 已生成，但文件发送失败，请稍后重试。", receive_id_type=receive_id_type)
                 else:
-                    if not check_pandoc():
-                        send_message(target_id or open_id, "✅ PPT 已发送！\n\n💡 安装 Pandoc 获得更佳效果：brew install pandoc", receive_id_type=receive_id_type)
+                    send_message(target_id or open_id, "✅ PPT 已发送！", receive_id_type=receive_id_type)
             else:
-                send_message(target_id or open_id, "PPT 生成失败，请提供更详细的文案。可使用空行分隔幻灯片，'-' 标记要点。", receive_id_type=receive_id_type)
+                send_message(target_id or open_id, f"PPT 生成失败：{result if isinstance(result, str) else '请提供更详细的文案'}。可使用空行分隔幻灯片，'-' 标记要点。", receive_id_type=receive_id_type)
         except Exception as e:
             logger.error(f"PPT 生成异常: {e}", exc_info=True)
             send_message(target_id or open_id, f"PPT 生成失败：{str(e)}", receive_id_type=receive_id_type)
@@ -250,25 +320,21 @@ def process_office_text(cmd_text: str, open_id: str, target_id: str = "", receiv
             return
         ppt_text = cached["text"]
         ppt_title = cached["title"]
-        send_message(target_id or open_id, f"📊 正在将「{ppt_title}」转为专业级 PPT…", receive_id_type=receive_id_type)
+        send_message(target_id or open_id, f"📊 正在将「{ppt_title}」转为 PPT（外部工具优先，预计 1-10 分钟）…", receive_id_type=receive_id_type)
         try:
             output_dir = PROJECT_ROOT / "data" / "office"
             output_dir.mkdir(parents=True, exist_ok=True)
             ts = int(__import__('time').time())
             output_path = str(output_dir / f"presentation_{ts}.pptx")
-            from core.ppt_generator import generate_via_pandoc, check_pandoc, generate_from_text
-            result = generate_via_pandoc(ppt_text, output_path)
-            if not result:
-                result = generate_from_text(ppt_text, output_path)
-            if result and os.path.getsize(result) > 1000:
-                ok = send_file_message(target_id or open_id, result, f"{ppt_title}.pptx", receive_id_type=receive_id_type)
-                if not ok:
+            ok, result = _generate_ppt(ppt_text, output_path)
+            if ok and os.path.getsize(result) > 1000:
+                send_ok = send_file_message(target_id or open_id, result, f"{ppt_title}.pptx", receive_id_type=receive_id_type)
+                if not send_ok:
                     send_message(target_id or open_id, "PPT 已生成，但文件发送失败，请稍后重试。", receive_id_type=receive_id_type)
                 else:
-                    if not check_pandoc():
-                        send_message(target_id or open_id, "✅ PPT 已发送！\n\n💡 安装 Pandoc 获得更佳效果：brew install pandoc", receive_id_type=receive_id_type)
+                    send_message(target_id or open_id, "✅ PPT 已发送！", receive_id_type=receive_id_type)
             else:
-                send_message(target_id or open_id, "PPT 生成失败，文档内容可能不完整。", receive_id_type=receive_id_type)
+                send_message(target_id or open_id, f"PPT 生成失败：{result if isinstance(result, str) else '文档内容可能不完整'}。", receive_id_type=receive_id_type)
         except Exception as e:
             logger.error(f"toppt 异常: {e}", exc_info=True)
             send_message(target_id or open_id, f"PPT 生成失败：{str(e)}", receive_id_type=receive_id_type)
@@ -315,14 +381,27 @@ def process_document_file(file_key: str, message_id: str, open_id: str, file_nam
             text = wp.extract_text()
             titles = wp.extract_titles()
             _cache_doc_text(open_id, text, info['file_name'])
-            result = doc_summarizer.summarize(text, max_points=5)
-            summary = result['summary']
+            summary = ""
+            summary_error = ""
+            if EXTERNAL_TOOLS_AVAILABLE:
+                try:
+                    ext_summary, ext_ok = summarize_doc_via_external(
+                        text, hint=f"《{info['file_name']}》Word 文档"
+                    )
+                    if ext_ok:
+                        summary = ext_summary
+                except Exception as e:
+                    logger.warning(f"外部摘要失败，本地兜底: {e}")
+            if not summary and DOC_PROCESSING_AVAILABLE:
+                result = doc_summarizer.summarize(text, max_points=5)
+                summary = result['summary']
+                summary_error = result.get('error')
             reply = f"📄 **{info['file_name']}** ({file_size_mb:.1f}MB)\n\n{summary}\n\n"
             reply += f"📊 文档信息：{info['paragraph_count']} 段落, {info['table_count']} 表格, {info['character_count']} 字符"
             if titles:
                 reply += f"\n📑 标题：{', '.join([t['text'] for t in titles[:5]])}"
-            if result.get('error'):
-                reply += f"\n⚠️ 注意：{result['error']}"
+            if summary_error:
+                reply += f"\n⚠️ 注意：{summary_error}"
             reply += "\n\n💡 如需转为 PPT，发送：转PPT"
 
         elif suffix == '.xlsx':
