@@ -1,0 +1,28 @@
+﻿需求编号,需求描述,来源,功能模块,验收标准,规模,MoSCoW,状态
+CHAT-01,三角色消息路由与飞书事件接收,架构设计文档,shared,消息路由成功且回复,M,Must,已实现
+CHAT-02,闲聊对话（流式+content/reasoning 拼接）,架构设计文档,chat-assistant,对话正常返回且 5 层提取正确,M,Must,已实现
+CHAT-03,对话历史 per-user 持久化（10 轮限制）,架构设计文档,chat-assistant,历史加密存取且截断正确,M,Must,已实现
+CHAT-04,天气查询,架构设计文档,chat-assistant,城市天气返回成功,M,Must,已实现
+CHAT-05,翻译/搜索（网络+本地归档）,架构设计文档,chat-assistant,搜索返回有效结果,M,Must,已实现
+CHAT-06,知识库检索（BM25+中文二元组）,架构设计文档,chat-assistant,检索 top_k 命中,M,Must,已实现
+CHAT-07,语音输入（opus→wav→whisper.cpp 识别）,架构设计文档,chat-assistant,语音转文字成功,M,Must,已实现
+CHAT-08,自定义提示词管理,AGENTS.md,chat-assistant,设置/查看/重置可用,S,Should,已实现
+CHAT-09,跨会话记忆（REQ-034）,PRJ-001,chat-assistant,跨会话恢复关键上下文,S,Should,待确认
+CHAT-10,任务委派（REQ-035）,PRJ-001,chat-assistant,任务可委派至指定角色,S,Should,待确认
+CHAT-11,文档起草（REQ-036）,PRJ-001,chat-assistant,按主题生成文档草稿,S,Should,待确认
+OFF-01,Word 处理（docx 解析+AI 摘要）,架构设计文档,office-assistant,docx 摘要返回有效,M,Must,已实现
+OFF-02,Excel 处理（xlsx 解析+结构分析+摘要）,架构设计文档,office-assistant,xlsx 分析返回有效,M,Must,已实现
+OFF-03,PPT 生成（文案分段+模板填充+pptx 输出）,架构设计文档,office-assistant,pptx 生成成功,M,Must,已实现
+OFF-04,文件夹监控（watchdog）,架构设计文档,office-assistant,变更事件触发回调,S,Should,已实现
+OFF-05,#办公 前缀文本命令 + 转PPT,AGENTS.md,office-assistant,命令路由成功,M,Must,已实现
+LIFE-01,日程管理 CRUD + 到期提醒,架构设计文档,life-assistant,日程增删查改+提醒,M,Must,已实现
+LIFE-02,健康管理（记录/报告/趋势分析）,架构设计文档,life-assistant,记录与报告返回,M,Must,已实现
+LIFE-03,旅行规划（行程/活动/打包）,架构设计文档,life-assistant,旅行 CRUD 可用,S,Should,已实现
+LIFE-04,锻炼规划（计划/训练/记录）,架构设计文档,life-assistant,锻炼 CRUD 可用,S,Should,已实现
+LIFE-05,工作管理（任务/状态/优先级/截止）,架构设计文档,life-assistant,工作 CRUD 可用,M,Must,已实现
+LIFE-06,网页看板,架构设计文档,life-assistant,看板可访问,S,Should,已实现
+LIFE-07,主动提醒（REQ-037）,PRJ-001,life-assistant,到期自动推送,S,Should,待确认
+SHARED-01,飞书 API 封装（发送/下载/上传）,架构设计文档,shared,消息收发成功,M,Must,已实现
+SHARED-02,后端抽象（free-api-hub/llama.cpp/Ollama）,架构设计文档,shared,三后端可切换,M,Must,已实现
+SHARED-03,数据加密（Fernet）,架构设计文档,shared,加解密正确,M,Must,已实现
+SHARED-04,语音识别封装,架构设计文档,shared,转写成功,M,Must,已实现
