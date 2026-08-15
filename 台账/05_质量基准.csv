@@ -1,0 +1,4 @@
+﻿阶段,质量验收标准,门禁要求,验证方式,状态
+开发,回归测试全部通过,自动化测试通过率 ≥95%，阻断级缺陷 0,venv/bin/python3 scripts/regression_test.py,通过（105 项）
+测试,E2E 可用性,关键路径全绿,diagnose.py + 端点探测,通过
+投产,上线就绪,发布级门禁,release_gate,待执行

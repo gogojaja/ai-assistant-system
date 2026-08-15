@@ -1,0 +1,8 @@
+﻿阶段,保留或裁剪,裁剪理由,责任方,说明
+第0阶段 项目启动,保留,强制保留,role-project-init,已立项，PRJ-001 升级项目
+需求分析,保留,,role-requirements-analysis,SRS v1.0 基线重建中
+架构设计,保留,,role-architecture,架构资产 01/02 已存在
+开发编码,保留,,role-development,三角色代码已完成，回归测试通过
+测试验收,保留,,role-testing,105 项回归测试通过
+部署运维,保留,,role-deployment,测试环境 :5101 运行中
+文档归档,保留,,role-governance,基线补齐中

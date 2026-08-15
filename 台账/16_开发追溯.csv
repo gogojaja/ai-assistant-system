@@ -1,0 +1,4 @@
+﻿需求,模块,文件,函数,测试用例,状态
+REQ-001,chat-assistant,message_handler.py,process_message,regression_test,已实现
+REQ-001,office-assistant,document_handler.py,process_document_file,regression_test,已实现
+REQ-001,life-assistant,scheduler.py,schedule_add,regression_test,已实现

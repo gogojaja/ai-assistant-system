@@ -1,0 +1,5 @@
+﻿需求编号,来源,功能模块,接口,测试用例,设计文档,状态
+REQ-001,PRJ-001,callback_server,EXT-001,regression_test,架构设计文档,已实现
+REQ-002,SRS 重建,chat-assistant,EXT-002,regression_test,架构设计文档,已实现
+REQ-006,SRS 重建,life-assistant,EXT-001,regression_test,架构设计文档,已实现
+REQ-034~037,PRJ-001 新增,chat/life,TBD,TBD,TBD,待需求角色确认

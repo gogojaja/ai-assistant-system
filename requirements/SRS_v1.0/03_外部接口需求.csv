@@ -1,0 +1,4 @@
+﻿接口编号,接口名称,外部系统,方式,状态
+EXT-001,飞书事件 Webhook,飞书开放平台,POST 回调 :5101,基线
+EXT-002,模型推理 API,free-api-hub / llama.cpp / Ollama,HTTP,基线
+EXT-003,知识库检索,本地 BM25,本地,基线

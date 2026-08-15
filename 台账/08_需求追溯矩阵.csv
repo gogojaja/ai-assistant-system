@@ -1,0 +1,7 @@
+﻿需求编号,需求名称,来源,功能模块,接口,数据,测试用例,设计文档,状态
+REQ-001,三角色基线切换,PRJ-001,callback_server 路由,webhook,消息记录,regression_test,架构设计文档,已实现
+REQ-034,跨会话记忆,PRJ-001 新增能力,chat-assistant,对话历史加密存储,chat_history JSON,TBD,架构设计文档,待需求角色确认
+REQ-035,任务委派,PRJ-001 新增能力,chat-assistant,TBD,TBD,TBD,TBD,待需求角色确认
+REQ-036,文档起草,PRJ-001 新增能力,chat-assistant,TBD,TBD,TBD,TBD,待需求角色确认
+REQ-037,主动提醒,PRJ-001 新增能力,life-assistant/reminder,定时检查,reminder 数据,TBD,架构设计文档,待需求角色确认
+REQ-XXX,其余需求明细,SRS v1.0（原始文件缺失）,待补,待补,待补,待补,待补,待需求角色补齐

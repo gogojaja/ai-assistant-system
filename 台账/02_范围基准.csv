@@ -1,0 +1,7 @@
+﻿模块,功能明细,禁止项,入口,状态
+1号AI chat-assistant,闲聊对话、天气/翻译/搜索、知识库、语音输入、跨会话记忆、任务委派、文档起草、自定义提示词,无,message_handler.process_message(),基线
+2号AI office-assistant,Word 摘要、Excel 分析、PPT 生成、文件变更监控、#办公 文本,无,document_handler,基线
+3号AI life-assistant,日程/健康/旅行/锻炼/工作管理、主动提醒、网页看板,无,process(),基线
+共享层 shared,飞书 API、回调入口、模型路由、加密、知识库、语音识别,无,callback_server.py,基线
+禁止项,新增业务角色 / Docker / sudo / 数据迁云端 / 更换飞书入口,禁止,—,禁止
+裁剪项,旧五角色中的 file-assistant/sys-assistant 及 4/5 号角色,裁剪为历史归档，不参与现行运行,—,历史归档

@@ -1,0 +1,4 @@
+﻿名称,用途,触发,保存路径,复用率评估
+regression_test.py,全量回归测试,venv/bin/python3 scripts/regression_test.py,scripts/,高
+diagnose.py,环境诊断,python3 scripts/diagnose.py,scripts/,高
+check_env.py,环境标记核验,python3 scripts/check_env.py,scripts/,高

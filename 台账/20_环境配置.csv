@@ -1,0 +1,8 @@
+﻿配置项,分类,test,归属,敏感标志,密钥引用别名
+回调端口,端口,5101,本仓库,否,—
+文件端口,端口,5102,本仓库,否,—
+系统端口,端口,5103,本仓库,否,—
+飞书 APP_ID,凭据,cli_aa9c870de6799bb4,shared/feishu-bot,A级,别名：FEISHU_APP_ID
+飞书密钥,凭据,不落库,shared/feishu-bot/.env,A级,别名：FEISHU_APP_SECRET
+默认模型路由,推理,free-api-hub,shared/backend_utils,否,—
+本地兜底,推理,llama.cpp/Ollama,shared/backend_utils,否,—
