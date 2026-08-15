@@ -2,3 +2,5 @@
 RISK-001,SRS 原始文件缺失，需求明细需重建,高,中,基于 AGENTS.md/design_summary 重建 + 需求角色补齐,role-requirements-analysis,跟踪中
 RISK-002,台账/文档引用路径失效,高,中,已重建台账并更新 AGENTS.md 权威参考,role-governance,已缓解
 RISK-003,推理后端断网降级依赖本地模型,低,低,free-api-hub 默认 + llama.cpp/Ollama 兜底,shared/backend_utils,已闭环
+RISK-004,章程为追溯补记，非当时决策记录,中,低,标注补记日期，避免误解为实时决策,role-project-init,已缓解
+RISK-005,飞书 Bot 用户验收确认未完成,中,中,需求/测试阶段安排验收确认,role-requirements-analysis,跟踪中
