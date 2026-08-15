@@ -5,7 +5,7 @@
 ## AI Agent Quick Start
 
 - 这是一个本地优先、飞书 Bot 入口的 Python 项目，核心 runtime 在 [shared/feishu-callback/callback_server.py](shared/feishu-callback/callback_server.py) 与三角色助手目录： [assistants/chat-assistant](assistants/chat-assistant)、[assistants/office-assistant](assistants/office-assistant)、[assistants/life-assistant](assistants/life-assistant)。
-- 默认入口为 Flask 回调服务，端口/环境必须遵守测试环境约束：工作区固定为 `/Volumes/BR256G/ai-assistant-system`，只允许使用 5101/5102/5103 这组测试端口，不可触碰主环境 5001/5002/5003。
+- 默认入口为 Flask 回调服务，端口/环境必须遵守测试环境约束：工作区固定为 `/Volumes/BR256G/ai-assistant-system`，只允许使用 5101/5103 这组测试端口（5102 已被 opencode 占用，4号遗留脚本改用 5082），不可触碰主环境 5001/5002/5003。
 - 最常用验证命令：
   - `python3 scripts/check_env.py`：检查 `.env_type` 与环境标记
   - `bash scripts/start_all_services.sh`：启动回调与本地测试服务
@@ -57,9 +57,10 @@
 - **禁止**使用任何以 `/Users/gogo/ai-assistant-system/` 或 `~/ai-assistant-system/` 开头的路径，出现必须立即拒绝操作
 
 **第 2 步 — 端口核验**
-- 测试环境端口范围：5101（回调）、5102（文件）、5103（系统）
+- 测试环境端口范围：5101（回调）、5103（系统）；5102 已被 opencode 进程占用
+- 4号文件助手遗留脚本改用 **5082**（规避 5102 占用，仅历史脚本，现行三角色不依赖）
 - **禁止**操作 5001/5002/5003 端口——这些属主环境
-- 任何 `lsof -ti:` 命令只允许指定 510x 端口
+- 任何 `lsof -ti:` 命令只允许指定 510x 端口（4号遗留脚本操作 5082 除外）
 
 **第 3 步 — 标记核验**
 - 修改任何文件前必须运行 `python3 scripts/check_env.py` 确认标记

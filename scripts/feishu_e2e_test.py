@@ -20,7 +20,7 @@ import time
 import requests
 
 BASE_CALLBACK = "http://127.0.0.1:5101"
-BASE_FILE = "http://127.0.0.1:5102"
+BASE_FILE = "http://127.0.0.1:5082"
 BASE_SYS = "http://127.0.0.1:5103"
 
 TIMEOUT = 15
@@ -238,12 +238,12 @@ def test_callback_service():
 
 
 # =====================================================================
-# 2. 文件助手服务 (5102) — 4号AI
+# 2. 文件助手服务 (5082) — 4号AI
 # =====================================================================
 def test_file_service():
     if filter_service and filter_service not in ("file", "all"):
         return
-    _section("2. 文件助手 :5102（4号AI）")
+    _section("2. 文件助手 :5082（4号AI）")
 
     _test("/health",
         lambda: _check("health",
@@ -533,7 +533,7 @@ def _audio_msg(file_key, open_id="u_e2e_test"):
 if __name__ == "__main__":
     print("=" * 60)
     print("  飞书客户端模拟 · 端到端 HTTP 测试")
-    print(f"  回调服务 :5101  |  文件助手 :5102  |  系统管理 :5103")
+    print(f"  回调服务 :5101  |  文件助手 :5082  |  系统管理 :5103")
     print("=" * 60)
 
     target = filter_service or "all"
