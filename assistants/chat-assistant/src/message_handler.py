@@ -1,6 +1,6 @@
 """
 模块名称：message_handler
-功能描述：文本消息处理（闲聊、天气、翻译、搜索），整合工具调用与 1号AI，支持 per-user 上下文记忆
+功能描述：文本消息处理（闲聊、天气、翻译、搜索），整合工具调用与 1号AI，支持 per-user 上下文记忆、跨会话记忆（REQ-034）、任务委派（REQ-035）、文档起草（REQ-036）
 对外接口：
     - process_message(user_text, target_id, open_id, receive_id_type): 处理用户文本消息，调用 send_message 回复
 依赖：
@@ -9,8 +9,9 @@
     - 项目内：shared.utils (get_weather, translate_text, handle_search, get_city_from_config_or_default),
                assistants.chat-assistant.src.main (talk, trim_history),
                shared.feishu_api (send_message)
-版本：v2.0
+版本：v2.1
 更新记录：
+    - 2026-08-16: 新增跨会话记忆（REQ-034）/任务委派（REQ-035）/文档起草（REQ-036）
     - 2026-05-25: 添加 per-user 对话历史管理，修复上下文记忆缺失
     - 2026-05-23: 初始创建，从 callback_server.py 剥离文本消息处理逻辑
 """
@@ -139,6 +140,196 @@ def _clear_history(open_id: str):
     return False
 
 
+# ===================== REQ-034 跨会话记忆 =====================
+
+def _memory_path(open_id: str) -> str:
+    mem_dir = os.path.join(os.path.dirname(__file__), '..', 'memory')
+    os.makedirs(mem_dir, exist_ok=True)
+    return os.path.join(mem_dir, f'memory_{open_id}.json')
+
+
+def _load_memory(open_id: str) -> dict:
+    path = _memory_path(open_id)
+    if os.path.exists(path):
+        try:
+            raw = open(path, 'r', encoding='utf-8').read()
+            data = json.loads(raw) if raw else {}
+            if isinstance(data, dict):
+                return data
+        except Exception:
+            pass
+    return {"facts": [], "updated_at": ""}
+
+
+def _save_memory(open_id: str, memory: dict):
+    path = _memory_path(open_id)
+    memory["updated_at"] = _now_str()
+    try:
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(memory, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        logger.warning(f"保存跨会话记忆失败: {e}")
+        return False
+
+
+def _extract_facts(user_text: str) -> list:
+    """从用户消息中提取可持久化的关键事实（简单规则）"""
+    import re
+    facts = []
+    m = re.search(r'(?:我叫|我是|名字是|姓名是|称呼我?为?)\s*([\u4e00-\u9fa5]{2,6})', user_text)
+    if m:
+        facts.append({"type": "user_name", "value": m.group(1).strip()})
+    m = re.search(r'(?:我(?:的)?(?:生日|生日是|过生日)[是为]?)\s*(\d{1,2}[月/]\d{1,2}日?)', user_text)
+    if m:
+        facts.append({"type": "birthday", "value": m.group(1).strip()})
+    m = re.search(r'(?:我(?:的)?)?(?:邮箱|Email|email)[是:：为]?\s*([A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,})', user_text)
+    if m:
+        facts.append({"type": "email", "value": m.group(1).strip()})
+    m = re.search(r'(?:我(?:的)?(?:公司|工作单位|在|任职于)[是:：为]?)\s*([\u4e00-\u9fa5A-Za-z0-9]{2,20}公司)', user_text)
+    if m:
+        facts.append({"type": "company", "value": m.group(1).strip()})
+    # 喜好：我喜欢/最爱/偏好
+    m = re.search(r'我(?:比较)?(?:喜欢|最爱|偏好|爱喝|爱吃)\s*([\u4e00-\u9fa5A-Za-z0-9]{2,10})', user_text)
+    if m:
+        facts.append({"type": "preference", "value": m.group(1).strip()})
+    return facts
+
+
+def _remember(user_text: str, open_id: str):
+    """提取并保存跨会话记忆，返回新增事实描述（无则空串）"""
+    facts = _extract_facts(user_text)
+    if not facts:
+        return ""
+    memory = _load_memory(open_id)
+    new_desc = []
+    for fact in facts:
+        exists = any(f.get("type") == fact["type"] and f.get("value") == fact["value"] for f in memory.get("facts", []))
+        if not exists:
+            memory.setdefault("facts", []).append(fact)
+            new_desc.append(f"{fact['type']}={fact['value']}")
+    if new_desc:
+        _save_memory(open_id, memory)
+    return "、".join(new_desc)
+
+
+def _memory_context(open_id: str) -> str:
+    """生成跨会话记忆注入文本，供模型感知长期上下文"""
+    memory = _load_memory(open_id)
+    facts = memory.get("facts", [])
+    if not facts:
+        return ""
+    lines = []
+    for f in facts:
+        if f.get("type") == "user_name":
+            lines.append(f"用户的名字是{f['value']}")
+        elif f.get("type") == "birthday":
+            lines.append(f"用户的生日是{f['value']}")
+        elif f.get("type") == "email":
+            lines.append(f"用户的邮箱是{f['value']}")
+        elif f.get("type") == "company":
+            lines.append(f"用户在{f['value']}工作")
+        elif f.get("type") == "preference":
+            lines.append(f"用户偏好：{f['value']}")
+        else:
+            lines.append(f"{f.get('type')}:{f['value']}")
+    return "【跨会话记忆】" + "；".join(lines)
+
+
+# ===================== REQ-035 任务委派 =====================
+
+_DELEGATE_HELP = (
+    "🤖 **任务委派**\n"
+    "将任务委派给指定 AI：\n"
+    "- `#委派 办公 <内容>` — 交给 2号AI 办公处理（Word/Excel/PPT）\n"
+    "- `#委派 日程 <内容>` — 交给 3号AI 生活处理（日程/健康/旅行/锻炼/工作）\n"
+    "- `#委派 闲聊 <内容>` — 交给 1号AI 闲聊处理\n"
+    "示例：`#委派 办公 帮我生成一份项目汇报PPT`"
+)
+
+
+def _delegate(user_text: str, target_id: str, open_id: str, receive_id_type: str):
+    """解析 #委派 指令并转交对应角色，返回是否已处理"""
+    cmd = user_text[len("#委派"):].lstrip(":： ").strip()
+    if not cmd:
+        return "help"
+    role_name = ""
+    content = cmd
+    for role, aliases in {
+        "办公": ("办公", "office", "2号", "#办公"),
+        "日程": ("日程", "生活", "life", "3号"),
+        "闲聊": ("闲聊", "chat", "1号"),
+    }.items():
+        for alias in aliases:
+            if cmd.startswith(alias):
+                role_name = role
+                content = cmd[len(alias):].lstrip(":： ").strip()
+                break
+        if role_name:
+            break
+    if not role_name:
+        return "help"
+    if not content:
+        return "help"
+    try:
+        if role_name == "办公":
+            from assistants.office_assistant.src.document_handler import process_office_text
+            process_office_text(content, open_id, target_id=target_id, receive_id_type=receive_id_type)
+            return "done"
+        if role_name == "日程":
+            from assistants.life_assistant.src import process as process_life
+            reply = process_life(content)
+            if reply:
+                from shared.feishu_api import send_message
+                send_message(target_id, reply, receive_id_type=receive_id_type)
+            return "done"
+        if role_name == "闲聊":
+            return "chat"
+    except Exception as e:
+        logger.error(f"任务委派失败: {e}")
+        send_message(target_id, f"⚠️ 任务委派失败：{e}", receive_id_type=receive_id_type)
+        return "done"
+    return "help"
+
+
+# ===================== REQ-036 文档起草 =====================
+
+def _draft_path() -> str:
+    draft_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data', 'drafts')
+    os.makedirs(draft_dir, exist_ok=True)
+    return draft_dir
+
+
+def _draft(user_text: str, target_id: str, open_id: str, receive_id_type: str):
+    """解析 起草 指令，调用模型生成文档草稿并保存"""
+    topic = user_text[len("起草"):].lstrip(":： ").strip()
+    if not topic:
+        return "help"
+    send_message(target_id, f"📝 正在起草《{topic}》，请稍候…", receive_id_type=receive_id_type)
+    try:
+        from main import talk
+        prompt = (
+            f"请以《{topic}》为题，起草一份结构完整的文档。\n"
+            "要求：使用 Markdown 格式；包含标题、引言、正文若干小节、总结；"
+            "内容专业、条理清晰、可直接作为初稿使用。"
+        )
+        draft = talk([{"role": "user", "content": prompt}], open_id=open_id)
+        if not draft or "AI 服务不可用" in draft:
+            send_message(target_id, "⚠️ 起草失败：AI 服务不可用", receive_id_type=receive_id_type)
+            return "done"
+        import datetime
+        fname = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + topic[:20] + ".md"
+        path = os.path.join(_draft_path(), fname)
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(f"# {topic}\n\n{draft}\n")
+        send_message(target_id, f"✅ 草稿已保存：\n`{path}`\n\n（内容预览）\n{draft[:500]}", receive_id_type=receive_id_type)
+        return "done"
+    except Exception as e:
+        logger.error(f"文档起草失败: {e}")
+        send_message(target_id, f"⚠️ 起草失败：{e}", receive_id_type=receive_id_type)
+        return "done"
+
+
 def process_message(user_text: str, target_id: str, open_id: str = None, receive_id_type: str = "open_id"):
     """处理用户文本消息，根据内容分发到不同功能，并回复"""
     try:
@@ -151,6 +342,26 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
         if user_text in help_triggers or any(t in user_text for t in ("能帮我做什么", "你能做什么")):
             send_message(target_id, _HELP_TEXT, receive_id_type=receive_id_type)
             return
+
+        # REQ-035 任务委派
+        if user_text.startswith("#委派") or user_text.startswith("#delegate") or user_text.startswith("#转交"):
+            result = _delegate(user_text, target_id, uid, receive_id_type)
+            if result == "help":
+                send_message(target_id, _DELEGATE_HELP, receive_id_type=receive_id_type)
+            elif result == "chat":
+                pass  # 落入下方闲聊处理
+            return
+
+        # REQ-036 文档起草
+        if user_text.startswith("起草") or user_text.startswith("写文档"):
+            result = _draft(user_text, target_id, uid, receive_id_type)
+            if result == "help":
+                send_message(target_id, "📝 请提供起草主题，例如：起草 项目周报", receive_id_type=receive_id_type)
+            return
+
+        # REQ-034 跨会话记忆：提取事实并注入上下文
+        _remembered = _remember(user_text, uid)
+        _mem_ctx = _memory_context(uid)
 
         # 清空指令
         if user_text.lower() == "clear":
@@ -280,6 +491,16 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
         if TALK_AVAILABLE:
             history = _load_history(uid)
 
+            # REQ-034 跨会话记忆注入（在模型上下文前置系统记忆）
+            _mem_ctx = _memory_context(uid)
+            if _mem_ctx:
+                _mem_prompt = {
+                    "role": "user",
+                    "content": f"{_mem_ctx}\n\n请记住以上关于用户的信息，并在后续回答中自然运用。本条为记忆注入，无需回复。",
+                }
+            else:
+                _mem_prompt = None
+
             # 身份类问题：从历史或当前消息中找用户自我介绍
             import re as _re
             if _re.match(r'我(是|叫|是谁|叫什么|的名字)', user_text):
@@ -337,6 +558,10 @@ def process_message(user_text: str, target_id: str, open_id: str = None, receive
                     chat_messages = list(history[-2:])
             except Exception:
                 chat_messages = list(history[-2:])
+
+            # REQ-034 跨会话记忆注入到模型上下文
+            if _mem_prompt:
+                chat_messages.insert(0, _mem_prompt)
 
             logger.info(f"[DEBUG] 传入 talk() 消息数={len(chat_messages)} 搜索模式={_search_mode} 历史长度={len(history)}")
 

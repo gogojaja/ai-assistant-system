@@ -2,7 +2,7 @@
 
 """
 模块名称：callback_server
-功能描述：飞书回调服务主入口，负责接收 webhook 事件并分派给处理器
+功能描述：飞书回调服务主入口，负责接收 webhook 事件并分派给处理器；含主动提醒定时线程（REQ-037）
 对外接口：
     - Flask 应用：/webhook (POST), /health (GET)
 依赖：
@@ -11,9 +11,11 @@
     - 项目内：shared.feishu_api (无直接调用，但被各处理器使用),
                assistants.chat-assistant.src.message_handler (process_message),
                assistants.chat-assistant.src.voice_handler (process_voice_message),
-               assistants.office-assistant.src.document_handler (process_document_file)
-版本：v1.0
+               assistants.office-assistant.src.document_handler (process_document_file),
+               assistants.life-assistant.src.reminder (check_reminders, REQ-037)
+版本：v1.1
 更新记录：
+    - 2026-08-16: 新增主动提醒定时线程（REQ-037）
     - 2026-05-23: 重构，剥离附加功能到独立模块，仅保留路由和事件分派
 """
 import os
@@ -221,6 +223,78 @@ def handle_event(data: dict):
         logger.info(f"忽略消息类型: {message_type}")
 
 
+# ===================== REQ-037 主动提醒 =====================
+
+_REMINDER_SENT = {}
+
+
+def _now_str():
+    """返回当前本地时间字符串"""
+    import datetime
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _check_reminders_loop():
+    """周期性检查日程到期提醒，到期推送飞书（按日程 id 去重防重复）"""
+    import time as _time
+    while True:
+        try:
+            _run_reminder_check()
+        except Exception as e:
+            logger.error(f"提醒检查异常: {e}")
+        _time.sleep(60)
+
+
+def _run_reminder_check():
+    """执行一次提醒检查，将到期日程推送至飞书"""
+    try:
+        sys.path.insert(0, str(PROJECT_ROOT / "assistants"))
+        from assistants.life_assistant.src.reminder import check_reminders
+        from shared.feishu_api import send_message
+        # 3号AI 日程数据无 per-user 维度，统一推送到配置的提醒目标
+        target = os.environ.get("REMINDER_TARGET_ID", "")
+        if not target:
+            cfg_target = ""
+            try:
+                import yaml
+                cfg = yaml.safe_load((PROJECT_ROOT / "config" / "settings.yaml").read_text())
+                cfg_target = cfg.get("reminder_target_id", "")
+            except Exception:
+                cfg_target = ""
+            target = cfg_target
+        if not target:
+            return
+        upcoming = check_reminders(within_minutes=30)
+        if not upcoming:
+            return
+        lines = upcoming.split("\n")
+        new_lines = []
+        for line in lines:
+            item_id = None
+            # 尝试从行内提取日程 id（scheduler.get_upcoming 返回 item dict，此处基于文本兜底）
+            import re as _re
+            m = _re.search(r'\[(\w{8})\]', line)
+            if m:
+                item_id = m.group(1)
+            if item_id and _REMINDER_SENT.get(item_id):
+                continue
+            new_lines.append(line)
+            if item_id:
+                _REMINDER_SENT[item_id] = _now_str()
+        if new_lines:
+            send_message(target, "\n".join(new_lines), receive_id_type="open_id")
+    except Exception as e:
+        logger.error(f"主动提醒执行失败: {e}")
+
+
+def start_reminder_thread():
+    """启动主动提醒后台线程（守护线程，随主进程退出）"""
+    t = threading.Thread(target=_check_reminders_loop, daemon=True)
+    t.daemon = True
+    t.start()
+    logger.info("⏰ 主动提醒线程已启动（每分钟轮询）")
+
+
 if __name__ == "__main__":
     logger.info("🚀 启动飞书回调服务（模块化重构）")
     import yaml
@@ -229,4 +303,5 @@ if __name__ == "__main__":
         port = cfg.get("callback_port", 5101)
     except Exception:
         port = 5101
+    start_reminder_thread()
     app.run(host="0.0.0.0", port=port, debug=False)

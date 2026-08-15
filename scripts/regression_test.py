@@ -417,10 +417,108 @@ def test_chat():
             raise ImportError("message_handler 模块未加载(dotenv)")
         assert "闲聊" in TEXT
 
+    # ---- REQ-034 跨会话记忆 ----
+    def test_memory_extract_facts():
+        _extract_facts = _safe_import("message_handler", "_extract_facts")
+        if not _extract_facts:
+            raise ImportError("message_handler 模块未加载")
+        facts = _extract_facts("我叫张三，我的生日是5月20日，邮箱是 zhangsan@test.com")
+        types = {f["type"]: f["value"] for f in facts}
+        assert types.get("user_name") == "张三", f"姓名提取失败: {types}"
+        assert types.get("birthday") == "5月20日", f"生日提取失败: {types}"
+        assert types.get("email") == "zhangsan@test.com", f"邮箱提取失败: {types}"
+
+    def test_memory_extract_facts_no_match():
+        _extract_facts = _safe_import("message_handler", "_extract_facts")
+        if not _extract_facts:
+            raise ImportError("message_handler 模块未加载")
+        facts = _extract_facts("今天天气真好")
+        assert facts == [], f"不应提取任何事实: {facts}"
+
+    def test_memory_save_load():
+        _save_memory = _safe_import("message_handler", "_save_memory")
+        _load_memory = _safe_import("message_handler", "_load_memory")
+        if not _save_memory or not _load_memory:
+            raise ImportError("message_handler 模块未加载")
+        import uuid
+        uid = "test_" + uuid.uuid4().hex[:8]
+        mem = {"facts": [{"type": "user_name", "value": "测试"}]}
+        _save_memory(uid, mem)
+        loaded = _load_memory(uid)
+        assert loaded["facts"][0]["value"] == "测试", f"记忆回读失败: {loaded}"
+        assert loaded.get("updated_at"), "缺少 updated_at 时间戳"
+
+    def test_memory_context_format():
+        _memory_context = _safe_import("message_handler", "_memory_context")
+        if not _memory_context:
+            raise ImportError("message_handler 模块未加载")
+        import uuid
+        uid = "test_ctx_" + uuid.uuid4().hex[:8]
+        assert _memory_context(uid) == "", "无记忆时应返回空串"
+        _save_memory = _safe_import("message_handler", "_save_memory")
+        _save_memory(uid, {"facts": [{"type": "user_name", "value": "李四"}]})
+        ctx = _memory_context(uid)
+        assert "跨会话记忆" in ctx and "李四" in ctx, f"记忆上下文生成异常: {ctx}"
+
+    def test_memory_remember_dedup():
+        _remember = _safe_import("message_handler", "_remember")
+        if not _remember:
+            raise ImportError("message_handler 模块未加载")
+        import uuid
+        uid = "test_rm_" + uuid.uuid4().hex[:8]
+        first = _remember("我叫王五", uid)
+        assert "王五" in first, f"首次记忆应返回新增描述: {first}"
+        second = _remember("我叫王五", uid)
+        assert second == "", f"重复事实不应再次记录: {second}"
+
+    # ---- REQ-035 任务委派 ----
+    def test_delegate_help_no_content():
+        _delegate = _safe_import("message_handler", "_delegate")
+        if not _delegate:
+            raise ImportError("message_handler 模块未加载")
+        assert _delegate("#委派", "t", "o", "open_id") == "help", "无委派内容应返回 help"
+
+    def test_delegate_unknown_role():
+        _delegate = _safe_import("message_handler", "_delegate")
+        if not _delegate:
+            raise ImportError("message_handler 模块未加载")
+        assert _delegate("#委派 财务 对账", "t", "o", "open_id") == "help", "未知角色应返回 help"
+
+    def test_delegate_help_text():
+        HELP = _safe_import("message_handler", "_DELEGATE_HELP")
+        if not HELP:
+            raise ImportError("message_handler 模块未加载")
+        assert "#委派 办公" in HELP and "#委派 日程" in HELP, "委派帮助应包含角色说明"
+
+    # ---- REQ-036 文档起草 ----
+    def test_draft_help_no_topic():
+        _draft = _safe_import("message_handler", "_draft")
+        if not _draft:
+            raise ImportError("message_handler 模块未加载")
+        assert _draft("起草", "t", "o", "open_id") == "help", "无主题应返回 help"
+
+    def test_draft_path_created():
+        _draft_path = _safe_import("message_handler", "_draft_path")
+        if not _draft_path:
+            raise ImportError("message_handler 模块未加载")
+        path = _draft_path()
+        assert os.path.exists(path), f"草稿目录应存在: {path}"
+        assert os.path.isdir(path), f"草稿路径应为目录: {path}"
+
     _test("message_handler 姓名查找", test_mh_find_user_name)
     _test("message_handler 无姓名匹配", test_mh_find_user_name_no_match)
     _test("message_handler 时间格式", test_mh_now_str)
     _test("message_handler 帮助文本", test_mh_help_text)
+    _test("REQ-034 记忆事实提取", test_memory_extract_facts)
+    _test("REQ-034 无匹配事实提取", test_memory_extract_facts_no_match)
+    _test("REQ-034 记忆保存回读", test_memory_save_load)
+    _test("REQ-034 记忆上下文格式", test_memory_context_format)
+    _test("REQ-034 记忆去重", test_memory_remember_dedup)
+    _test("REQ-035 委派无内容", test_delegate_help_no_content)
+    _test("REQ-035 委派未知角色", test_delegate_unknown_role)
+    _test("REQ-035 委派帮助文本", test_delegate_help_text)
+    _test("REQ-036 起草无主题", test_draft_help_no_topic)
+    _test("REQ-036 草稿目录创建", test_draft_path_created)
 
 
 # =====================================================================
@@ -1320,6 +1418,61 @@ def test_callback():
     def test_dashboard_exists():
         assert cb_mod.dashboard_bp is not None
 
+    # ---- REQ-037 主动提醒 ----
+    def test_reminder_now_str():
+        s = cb_mod._now_str()
+        import re
+        assert re.match(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$", s), f"_now_str 格式异常: {s}"
+
+    def test_reminder_thread_started():
+        # 验证启动函数可调用且会创建守护线程
+        cb_mod._REMINDER_SENT.clear()
+        try:
+            cb_mod.start_reminder_thread()
+        except Exception as e:
+            raise AssertionError(f"提醒线程启动失败: {e}")
+
+    def test_reminder_check_empty():
+        # 无配置目标时不应抛异常
+        import os as _os
+        old = _os.environ.get("REMINDER_TARGET_ID")
+        _os.environ.pop("REMINDER_TARGET_ID", None)
+        try:
+            cb_mod._run_reminder_check()
+        except Exception as e:
+            raise AssertionError(f"提醒检查空配置应静默: {e}")
+        finally:
+            if old:
+                _os.environ["REMINDER_TARGET_ID"] = old
+
+    def test_reminder_extract_send():
+        # 模拟到期日程：写入临时调度文件，验证 check_reminders 能识别
+        from pathlib import Path as _Path
+        life_dir = PROJECT_ROOT / "data" / "life"
+        old_schedule = life_dir / "schedules.json"
+        backup = None
+        if old_schedule.exists():
+            backup = old_schedule.read_text()
+        from datetime import datetime, timedelta
+        near = (datetime.now() + timedelta(minutes=5)).strftime("%Y-%m-%d %H:%M:%S")
+        life_dir.mkdir(parents=True, exist_ok=True)
+        old_schedule.write_text('[]', encoding='utf-8')
+        import json as _json
+        old_schedule.write_text(_json.dumps(
+            [{"id": "testrem1", "title": "回归测试提醒", "time": near}],
+            ensure_ascii=False
+        ), encoding='utf-8')
+        try:
+            sys.path.insert(0, str(PROJECT_ROOT / "assistants"))
+            from assistants.life_assistant.src.reminder import check_reminders
+            result = check_reminders(within_minutes=30)
+            assert "回归测试提醒" in result, f"提醒识别失败: {result}"
+        finally:
+            if backup is not None:
+                old_schedule.write_text(backup, encoding='utf-8')
+            else:
+                old_schedule.unlink(missing_ok=True)
+
     _test("callback /health", test_health_endpoint)
     _test("callback challenge验证", test_webhook_challenge)
     _test("callback 空JSON", test_webhook_empty_body_json)
@@ -1327,6 +1480,10 @@ def test_callback():
     _test("callback 未知路由", test_unknown_route)
     _test("callback 后端路由配置", test_backends_config)
     _test("callback dashboard蓝图", test_dashboard_exists)
+    _test("REQ-037 时间格式", test_reminder_now_str)
+    _test("REQ-037 提醒线程启动", test_reminder_thread_started)
+    _test("REQ-037 空配置静默", test_reminder_check_empty)
+    _test("REQ-037 日程识别", test_reminder_extract_send)
 
 
 # =====================================================================
