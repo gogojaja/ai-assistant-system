@@ -6,7 +6,7 @@
 可靠-进程看护,模型进程内存超 8GB 自动重启、闲置 30min SIGSTOP、请求到达 SIGCONT,monitor 日志,生效
 可靠-服务守护,回调服务 keepalive + 定时备份，异常自拉起,monitor 日志,生效
 性能-响应,回调端到端响应 <5s（正常网络）,端点探测,已满足
-性能-质量门禁,回归测试通过率 ≥95%（当前 102/102）,regression_test.py,已满足
+性能-质量门禁,回归测试通过率 ≥95%（当前 105/105）,regression_test.py,已满足
 性能-唤醒时延,模型冷启(SIGCONT) <10s 恢复推理,性能测试,生效
 兼容-单后端,Ollama 单容器（localhost:11434，模型 qwen2.5:7b）,配置核验,生效
 兼容-平台,适配 macOS Apple Silicon，路径/脚本双平台兼容,diagnose.py,生效

@@ -1,2 +1,7 @@
-﻿项目名称,产品定位,运行环境,用户特征,约束
-AI 助理系统,飞书 Bot 统一交互的本地优先 AI 助理,macOS Apple Silicon，测试环境 :5101,个人/办公用户,本地加密留存、断网降级本地推理
+﻿章节,内容,说明
+目的,三角色 AI 助理系统需求规格（重建骨架）,PRJ-001 基线
+范围,闲聊/办公/日程三角色 + 共享层,禁止新增业务角色
+读者,研发/测试/架构,—
+参考,AGENTS.md、design_summary.md、架构设计文档,—
+假设,本地 ollama 进程可用；macOS Apple Silicon 环境；飞书 Bot 凭证与隧道就绪,环境铁律
+依赖,shared/backend_utils(ollama 单后端)、shared/feishu_api、whisper.cpp(语音)、.crypto_key(加密),—

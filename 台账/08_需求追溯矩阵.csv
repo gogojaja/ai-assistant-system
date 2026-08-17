@@ -7,9 +7,9 @@ CHAT-05,翻译/搜索,架构设计文档,search.py search_web/search_archive,搜
 CHAT-06,知识库检索,架构设计文档,shared/knowledge_base.py search(),本地,data/knowledge,regression_test,架构设计文档,已实现
 CHAT-07,语音输入,架构设计文档,voice_handler.py process_voice_message(),whisper.cpp,音频文件,regression_test,架构设计文档,已实现
 CHAT-08,自定义提示词,AGENTS.md,main.py _load/_save_custom_prompt(),本地,prompt 文件,regression_test,架构设计文档,已实现
-CHAT-09,跨会话记忆,PRJ-001,TBD,TBD,TBD,TBD,TBD,待确认
-CHAT-10,任务委派,PRJ-001,TBD,TBD,TBD,TBD,TBD,待确认
-CHAT-11,文档起草,PRJ-001,TBD,TBD,TBD,TBD,TBD,待确认
+CHAT-09,跨会话记忆,PRJ-001(REQ-034),chat-assistant message_handler _memory_*,本地,memory JSON,regression_test,架构设计文档,已实现
+CHAT-10,任务委派,PRJ-001(REQ-035),main.py #委派路由,文本命令,委派记录,regression_test,架构设计文档,已实现
+CHAT-11,文档起草,PRJ-001(REQ-036),main.py 起草指令,文本命令,data/drafts,regression_test,架构设计文档,已实现
 OFF-01,Word 处理,架构设计文档,office-assistant/core/word_processor.py,文件消息,docx,regression_test,架构设计文档,已实现
 OFF-02,Excel 处理,架构设计文档,office-assistant/core/excel_processor.py,文件消息,xlsx,regression_test,架构设计文档,已实现
 OFF-03,PPT 生成,架构设计文档,office-assistant/core/ppt_generator.py generate_presentation(),文本命令,pptx,regression_test,架构设计文档,已实现
@@ -21,7 +21,7 @@ LIFE-03,旅行规划,架构设计文档,travel_planner.py create/list/activity()
 LIFE-04,锻炼规划,架构设计文档,workout_planner.py create/log(),中文关键词,workout JSON,regression_test,架构设计文档,已实现
 LIFE-05,工作管理,架构设计文档,work_planner.py create/set_status(),中文关键词,work JSON,regression_test,架构设计文档,已实现
 LIFE-06,网页看板,架构设计文档,callback_server dashboard 路由,HTTP,dashboard 数据,regression_test,架构设计文档,已实现
-LIFE-07,主动提醒,PRJ-001,reminder.py check_reminders(),定时器,reminder 数据,regression_test,架构设计文档,待确认
+LIFE-07,主动提醒,PRJ-001(REQ-037),callback_server 守护线程 check_reminders,定时器,reminder 数据,regression_test,架构设计文档,已实现
 SHARED-01,飞书 API,架构设计文档,shared/feishu_api.py send/download,EXT-001,消息记录,regression_test,架构设计文档,已实现
 SHARED-02,后端抽象,架构设计文档,shared/backend_utils.py call_api(),EXT-002,无,regression_test,架构设计文档,已实现
 SHARED-03,数据加密,架构设计文档,shared/crypto.py encrypt/decrypt,本地,.crypto_key,regression_test,架构设计文档,已实现

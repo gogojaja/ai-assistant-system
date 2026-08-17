@@ -1,5 +1,11 @@
-﻿需求编号,来源,功能模块,接口,测试用例,设计文档,状态
-REQ-001,PRJ-001,callback_server,EXT-001,regression_test,架构设计文档,已实现
-REQ-002,SRS 重建,chat-assistant,EXT-002,regression_test,架构设计文档,已实现
-REQ-006,SRS 重建,life-assistant,EXT-001,regression_test,架构设计文档,已实现
-REQ-034~037,PRJ-001 新增,chat/life,TBD,TBD,TBD,待需求角色确认
+﻿需求编号,模块编号,来源,功能模块,接口,测试用例,设计文档,状态
+REQ-001,CHAT-01,PRJ-001/SRS,callback_server,EXT-001,regression_test,架构设计文档,已实现
+REQ-002,CHAT-02,SRS 重建,chat-assistant/main.py talk(),EXT-002,regression_test,架构设计文档,已实现
+REQ-003,CHAT-04/CHAT-05/CHAT-06,SRS 重建,main.py get_weather()/search.py/knowledge_base.py search(),EXT-002/外部API/本地,regression_test,架构设计文档,已实现
+REQ-004,CHAT-07,SRS 重建,voice_handler.py process_voice_message(),whisper.cpp,regression_test,架构设计文档,已实现
+REQ-005,OFF-01/OFF-02/OFF-03,SRS 重建,office-assistant word/excel/ppt,文件消息,regression_test,架构设计文档,已实现
+REQ-006,LIFE-01~06,SRS 重建,life-assistant scheduler/health/travel/workout/work,中文关键词,regression_test,架构设计文档,已实现
+REQ-034,CHAT-09,PRJ-001 新增,chat-assistant _memory_*,本地,regression_test,架构设计文档,已实现
+REQ-035,CHAT-10,PRJ-001 新增,main.py #委派路由,文本命令,regression_test,架构设计文档,已实现
+REQ-036,CHAT-11,PRJ-001 新增,main.py 起草指令,文本命令,regression_test,架构设计文档,已实现
+REQ-037,LIFE-07,PRJ-001 新增,callback_server 守护线程 check_reminders,定时器,regression_test,架构设计文档,已实现
