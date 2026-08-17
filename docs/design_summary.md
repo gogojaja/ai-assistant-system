@@ -32,7 +32,7 @@
 
 ### 共享后端
 
-- 默认路由：`free-api-hub` / 云端模型调用
+- 默认路由：本地 `ollama` 单容器推理
 - 本地兜底：`ollama`（单容器，localhost:11434）
 - 统一入口：`shared/backend_utils.py`
 
@@ -154,8 +154,8 @@
 - ✅ 端到端 HTTP 探测：3 个服务 10 个端点全部通过
 - ✅ (2026-06-13) AGENTS.md 新增 3 条沟通原则（专业态度、基于验证、不确定告知）
 - ✅ (2026-06-13) config/settings.yaml 新增 `chat_api_url` 和 `chat_model` 云端路由配置
-- ✅ (2026-06-13) shared/backend_utils.py 新增 free-api-hub 后端支持（配置读取+API调用）
-- ✅ (2026-06-13) 飞书1号机器人切换至 free-api-hub 聊天实例（Qwen3-32B）
+- ✅ (2026-06-13) shared/backend_utils.py 新增 ollama 后端支持（配置读取+API调用）
+- ✅ (2026-06-13) 飞书1号机器人切换至 ollama 聊天实例（Qwen3-32B）
 
 ---
 
@@ -166,8 +166,8 @@
 3. **dev-assistant 第6角色** —— 目录存在但无代码
 4. **watchdog 安装** —— office-assistant 文件夹监控依赖，当前 venv-office 未安装
 5. **推理后端接入 E2E 测试** —— 已统一为 ollama 单容器，后端依赖测试收敛（不再依赖 llama-server）
-6. **free-api-hub chat.yaml / code.yaml 模型优先级调整** —— 当前路由可能落到弱模型，需手动调整优先级
-7. **openapi.json provider 命名规范化** —— 已统一为 `free-api-hub-chat` / `free-api-hub-code`，去掉了 `default` 占位符
+6. **（ollama 已移除，模型优先级项不适用）** —— 当前路由可能落到弱模型，需手动调整优先级
+7. **openapi.json provider 命名规范化** —— 已统一为 `ollama-chat` / `ollama-code`，去掉了 `default` 占位符
 
 ## 7. 测试覆盖
 
@@ -221,7 +221,7 @@ venv/bin/python3 scripts/regression_test.py --module chat  # 按模块筛选
 ## 9. 风险说明
 
 - 模型稳定运行 qwen2.5:7b（ollama 后端，localhost:11434），短回答速度 ~30-45 tok/s
-- **free-api-hub 云端路由**（Qwen3-32B）作为聊天后端，速度取决于网络和 Free API Hub 可用性
+- **ollama 本地推理**（qwen2.5:7b）作为聊天后端，速度取决于网络和 Free API Hub 可用性
 - 已统一为 ollama 单容器本地推理，移除 llama.cpp 聊天服务；qwen2.5:7b 在 ollama 下性能满足需求，无需保留双后端
 - 飞书回调需公网可达，本地开发建议内网穿透
 - 凭证文件 `**/.env` 被 .gitignore 排除，不会被提交
@@ -254,5 +254,5 @@ venv/bin/python3 scripts/regression_test.py --module chat  # 按模块筛选
 | 2026-05-28 | v5.0 模型清理 | 删除 ollama 中 qwen3:4b (2.5 GB) 和 qwen3.5:4b (3.4 GB)，仅保留 qwen2.5:7b |
 | 2026-06-13 | v5.1 AGENTS.md 更新 | 新增3条原则，移除1条冗余 |
 | 2026-06-13 | v5.1 settings.yaml 云端路由 | 新增 chat_api_url / chat_model 配置 |
-| 2026-06-13 | v5.1 backend_utils.py 重构 | 支持 free-api-hub 后端（配置读取+API调用+跳过本地唤醒） |
-| 2026-06-13 | v5.1 飞书聊天切换云端 | 1号机器人从 llama.cpp(qwen2.5:7b) 切至 free-api-hub(Qwen3-32B) |
+| 2026-06-13 | v5.1 backend_utils.py 重构 | 支持 ollama 后端（配置读取+API调用+跳过本地唤醒） |
+| 2026-06-13 | v5.1 飞书聊天切换云端 | 1号机器人从 llama.cpp(qwen2.5:7b) 切至 ollama(Qwen3-32B) |

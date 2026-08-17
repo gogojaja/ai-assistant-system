@@ -36,26 +36,19 @@ def get_backend_config() -> dict:
     try:
         if config_path.exists():
             cfg = yaml.safe_load(config_path.read_text())
-            chat_api_url = cfg.get("chat_api_url", "")
-            if chat_api_url:
-                return {
-                    "backend": "free-api-hub",
-                    "api_url": chat_api_url,
-                    "model": cfg.get("chat_model", "free-api-hub-chat"),
-                }
-            backend = cfg.get("backend", "llama.cpp")
-            port = cfg.get("ollama_port", 11434) if backend == "ollama" else cfg.get("llama_port", 8080)
-            model = cfg.get("ollama_model", "qwen2.5:7b") if backend == "ollama" else "gpt-3.5-turbo"
+            backend = cfg.get("backend", "ollama")
+            port = cfg.get("ollama_port", 11434)
+            model = cfg.get("ollama_model", "qwen2.5:7b")
             return {"backend": backend, "port": port, "model": model}
     except Exception:
         pass
-    return {"backend": "llama.cpp", "port": 8080, "model": "gpt-3.5-turbo"}
+    return {"backend": "ollama", "port": 11434, "model": "qwen2.5:7b"}
 
 
 def wake_model():
     """唤醒被 SIGSTOP 挂起的模型进程 (llama-server 或 ollama)"""
     try:
-        for proc_name in ("llama-server", "ollama"):
+        for proc_name in ("ollama",):
             result = subprocess.run(["pgrep", "-f", proc_name], capture_output=True, text=True, timeout=3)
             for pid in [p.strip() for p in result.stdout.split("\n") if p.strip()]:
                 state = subprocess.run(["ps", "-o", "stat=", "-p", pid], capture_output=True, text=True, timeout=3).stdout.strip()
@@ -69,12 +62,8 @@ def wake_model():
 def call_api(messages: list, temperature: float = 0.3, max_tokens: int = 1024) -> str:
     """流式调用推理后端 API，返回回复文本"""
     cfg = get_backend_config()
-
-    if cfg.get("backend") == "free-api-hub":
-        api_url = cfg["api_url"] + "/chat/completions"
-    else:
-        wake_model()
-        api_url = f"http://localhost:{cfg['port']}/v1/chat/completions"
+    wake_model()
+    api_url = f"http://localhost:{cfg['port']}/v1/chat/completions"
     try:
         resp = requests.post(
             api_url,

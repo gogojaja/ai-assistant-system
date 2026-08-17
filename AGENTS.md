@@ -100,9 +100,9 @@
 
 ## 项目概述
 
-**目标**：飞书 Bot 统一交互的 AI 助理系统，核心数据留存本地并加密存储，支持 macOS Apple Silicon 推理。默认 free-api-hub 云端路由，断网自动降级本地推理（ollama 单容器）。
+**目标**：飞书 Bot 统一交互的 AI 助理系统，核心数据留存本地并加密存储，支持 macOS Apple Silicon 推理。默认 ollama 本地推理（单容器），无云端兜底。
 
-**架构**：飞书 Bot → cloudflared/ngrok 隧道 → Flask 回调服务（port 5101）→ 推理后端（free-api-hub / ollama 两后端可切换）→ 各助手处理器 → 飞书回复。
+**架构**：飞书 Bot → cloudflared/ngrok 隧道 → Flask 回调服务（port 5101）→ 推理后端（ollama 单后端）→ 各助手处理器 → 飞书回复。
 
 **环境**：测试环境 `/Volumes/BR256G/ai-assistant-system/`，独立飞书 Bot（APP_ID=`cli_aa9c870de6799bb4`），端口 5101，与主环境 5001 互不干扰。
 

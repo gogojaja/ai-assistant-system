@@ -23,6 +23,6 @@ LIFE-05,工作管理（任务/状态/优先级/截止）,架构设计文档,life
 LIFE-06,网页看板,架构设计文档,life-assistant,看板可访问,S,Should,已实现
 LIFE-07,主动提醒（REQ-037）,PRJ-001,life-assistant,到期自动推送,S,Should,待确认
 SHARED-01,飞书 API 封装（发送/下载/上传）,架构设计文档,shared,消息收发成功,M,Must,已实现
-SHARED-02,后端抽象（free-api-hub/llama.cpp/Ollama）,架构设计文档,shared,三后端可切换,M,Must,已实现
+SHARED-02,后端抽象（Ollama 单容器）,架构设计文档,shared,单后端,M,Must,已实现
 SHARED-03,数据加密（Fernet）,架构设计文档,shared,加解密正确,M,Must,已实现
 SHARED-04,语音识别封装,架构设计文档,shared,转写成功,M,Must,已实现

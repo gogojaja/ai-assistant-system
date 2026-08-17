@@ -1,5 +1,5 @@
 ﻿主机,资源类型,资源标识,环境,端口,容器名,模型名,占用项目,状态,优先级,备注
-本机,回调服务,callback_server,test,5101,—,free-api-hub/llama.cpp/Ollama,本仓库,占用,高,主环境 5001 隔离
+本机,回调服务,callback_server,test,5101,—,ollama,本仓库,占用,高,主环境 5001 隔离
 本机,回调服务,callback_server,main,5001,—,待补(主环境未在本仓库登记),主环境,占用,高,与测试 5101 隔离；目录 /Users/gogo/ai-assistant-system/；本会话按环境隔离铁律禁止访问(见 14_授权登记)
 本机,文件Bot服务,file_bot_server,main,5002,—,待补(主环境未在本仓库登记),主环境,占用,高,与测试 5102 隔离
 本机,系统Bot服务,system_bot,main,5003,—,待补(主环境未在本仓库登记),主环境,占用,高,与测试 5103 隔离

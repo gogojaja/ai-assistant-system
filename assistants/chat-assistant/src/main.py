@@ -194,11 +194,8 @@ def talk(messages, open_id=""):
     _inject_system_context(messages, open_id)
     messages = trim_history(messages)
     cfg = _get_backend_config()
-    if cfg['backend'] != 'free-api-hub':
-        _wake_model(cfg)
-        api_url = f"http://localhost:{cfg['port']}/v1/chat/completions"
-    else:
-        api_url = cfg['api_url'] + "/chat/completions"
+    _wake_model(cfg)
+    api_url = f"http://localhost:{cfg['port']}/v1/chat/completions"
     api_model = cfg['model']
     logger.debug(f"后端={cfg['backend']} 端口={cfg.get('port','?')} 模型={api_model} 消息数={len(messages)}")
     full_content = ""
@@ -313,10 +310,7 @@ def _fallback_with_postprocess(messages):
     """
     import requests, re
     _cfg = _get_backend_config()
-    if _cfg['backend'] != 'free-api-hub':
-        _api_url = f"http://localhost:{_cfg['port']}/v1/chat/completions"
-    else:
-        _api_url = _cfg['api_url'] + "/chat/completions"
+    _api_url = f"http://localhost:{_cfg['port']}/v1/chat/completions"
     _api_model = _cfg['model']
     try:
         resp = requests.post(
