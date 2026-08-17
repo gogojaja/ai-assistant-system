@@ -100,9 +100,9 @@
 
 ## 项目概述
 
-**目标**：飞书 Bot 统一交互的 AI 助理系统，核心数据留存本地并加密存储，支持 macOS Apple Silicon 推理。默认 free-api-hub 云端路由，断网自动降级本地推理（llama.cpp/Ollama）。
+**目标**：飞书 Bot 统一交互的 AI 助理系统，核心数据留存本地并加密存储，支持 macOS Apple Silicon 推理。默认 free-api-hub 云端路由，断网自动降级本地推理（ollama 单容器）。
 
-**架构**：飞书 Bot → cloudflared/ngrok 隧道 → Flask 回调服务（port 5101）→ 推理后端（free-api-hub / llama.cpp / Ollama 三后端可切换）→ 各助手处理器 → 飞书回复。
+**架构**：飞书 Bot → cloudflared/ngrok 隧道 → Flask 回调服务（port 5101）→ 推理后端（free-api-hub / ollama 两后端可切换）→ 各助手处理器 → 飞书回复。
 
 **环境**：测试环境 `/Volumes/BR256G/ai-assistant-system/`，独立飞书 Bot（APP_ID=`cli_aa9c870de6799bb4`），端口 5101，与主环境 5001 互不干扰。
 
@@ -184,7 +184,7 @@ tail -f logs/backup_cron.log    # 定时备份日志
 
 ## 注意点
 
-- API 请求中 `model` 字段：llama.cpp 用 `gpt-3.5-turbo`（假名），Ollama 用实际模型名
+- API 请求中 `model` 字段：ollama 用实际模型名（如 `qwen2.5:7b`）
 - `callback_server.py` 通过 `sys.path.insert` 硬编码了助手 src 路径 — 添加新助手需同步修改
 - 修改 `message_handler.py` 或 `callback_server.py` 后需重启 Flask（`bash scripts/restart_callback.sh`）
 - 1号AI 对话历史加密存储于 `assistants/chat-assistant/logs/chat_history_{open_id}.json`

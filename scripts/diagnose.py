@@ -58,14 +58,13 @@ EXPECTED = {
         "start_all_services.sh",
         "stop_all_services.sh",
         "restart_callback.sh",
-        "benchmark_llama.sh",
         "diagnose.sh",
         "update_docs.sh",
         "verify_phase2.sh"
     ],
     "services": {
-        "llama-server": {"port": 8080, "process_name": "llama-server"},
-        "flask": {"port": 5001, "process_name": "python.*callback_server"},
+        "ollama": {"port": 11434, "process_name": "ollama"},
+        "flask": {"port": 5101, "process_name": "python.*callback_server"},
         "ngrok": {"process_name": "ngrok"}
     },
     "whisper": {
@@ -235,11 +234,19 @@ class EnvironmentDiagnoser:
             logger.error(f"查找模型文件失败: {e}")
 
     def check_pip_deps(self):
-        deps = ["flask", "requests", "python-docx", "openpyxl", "mammoth", "deep-translator"]
+        # 包名 -> 实际 import 模块名（python-docx 的模块名为 docx）
+        dep_map = {
+            "flask": "flask",
+            "requests": "requests",
+            "python-docx": "docx",
+            "openpyxl": "openpyxl",
+            "mammoth": "mammoth",
+            "deep-translator": "deep_translator",
+        }
         self.report["checks"]["dependencies"] = {}
-        for dep in deps:
+        for dep, mod in dep_map.items():
             try:
-                __import__(dep.replace("-", "_"))
+                __import__(mod)
                 self.report["checks"]["dependencies"][dep] = "已安装"
             except ImportError:
                 self.report["checks"]["dependencies"][dep] = "❌ 未安装"

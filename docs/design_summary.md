@@ -33,7 +33,7 @@
 ### 共享后端
 
 - 默认路由：`free-api-hub` / 云端模型调用
-- 本地兜底：`llama.cpp` / `Ollama`
+- 本地兜底：`ollama`（单容器，localhost:11434）
 - 统一入口：`shared/backend_utils.py`
 
 ### 环境约束
@@ -117,7 +117,7 @@
 - ✅ 全部依赖补全（22个库）
 - ✅ 核心文件恢复与软链接修复
 - ✅ Flask 回调服务正常运行
-- ✅ llama.cpp / Ollama 双后端支持
+- ✅ ollama 单容器本地推理（已移除 llama.cpp 聊天服务）
 - ✅ 环境核验脚本可用
 - ✅ 一键还原脚本 restore.sh
 - ✅ 服务守护 monitor_services.sh
@@ -165,7 +165,7 @@
 2. **飞书 WebSocket Bot（shared/feishu-bot/）** —— 代码结构存在，尚未接入主线流程
 3. **dev-assistant 第6角色** —— 目录存在但无代码
 4. **watchdog 安装** —— office-assistant 文件夹监控依赖，当前 venv-office 未安装
-5. **推理后端接入 E2E 测试** —— 当前 llama-server 未启动时 23 项后端依赖测试记录为 WARNING 降级
+5. **推理后端接入 E2E 测试** —— 已统一为 ollama 单容器，后端依赖测试收敛（不再依赖 llama-server）
 6. **free-api-hub chat.yaml / code.yaml 模型优先级调整** —— 当前路由可能落到弱模型，需手动调整优先级
 7. **openapi.json provider 命名规范化** —— 已统一为 `free-api-hub-chat` / `free-api-hub-code`，去掉了 `default` 占位符
 
@@ -220,9 +220,9 @@ venv/bin/python3 scripts/regression_test.py --module chat  # 按模块筛选
 
 ## 9. 风险说明
 
-- 模型稳定运行 qwen2.5:7b（llama.cpp 后端），短回答速度 ~30-45 tok/s
+- 模型稳定运行 qwen2.5:7b（ollama 后端，localhost:11434），短回答速度 ~30-45 tok/s
 - **free-api-hub 云端路由**（Qwen3-32B）作为聊天后端，速度取决于网络和 Free API Hub 可用性
-- **qwen3.5 无 7B 版本**（只有 0.8B/2B/4B/9B），不推荐切换；Ollama 对比 llama.cpp 性能略低 5-10%，无切換必要
+- 已统一为 ollama 单容器本地推理，移除 llama.cpp 聊天服务；qwen2.5:7b 在 ollama 下性能满足需求，无需保留双后端
 - 飞书回调需公网可达，本地开发建议内网穿透
 - 凭证文件 `**/.env` 被 .gitignore 排除，不会被提交
 - 各助手虚拟环境独立，互不干扰
