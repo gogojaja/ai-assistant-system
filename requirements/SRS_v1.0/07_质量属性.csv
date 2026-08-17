@@ -1,4 +1,18 @@
 ﻿属性,要求,验证方式,状态
-安全,密钥不入库，加密留存,security_audit,生效
-可靠,断网降级本地推理,E2E 测试,生效
-可维护,三角色边界清晰,架构评审,生效
+安全-凭证隔离,飞书 APP_SECRET/API Key 仅存 .env 不入库，gitignore 管控,security_audit,生效
+安全-数据加密,跨会话记忆/对话历史 AES 加密留存本地，不迁云端,security_audit,生效
+安全-传输,飞书回调与 API 全 HTTPS，事件签名校验,security_audit,生效
+可靠-降级,云端 free-api-hub 不可达时自动降级本地 llama.cpp/Ollama,E2E 测试,生效
+可靠-进程看护,模型进程内存超 8GB 自动重启、闲置 30min SIGSTOP、请求到达 SIGCONT,monitor 日志,生效
+可靠-服务守护,回调服务 keepalive + 定时备份，异常自拉起,monitor 日志,生效
+性能-响应,回调端到端响应 <5s（正常网络）,端点探测,已满足
+性能-质量门禁,回归测试通过率 ≥95%（当前 102/102）,regression_test.py,已满足
+性能-唤醒时延,模型冷启(SIGCONT) <10s 恢复推理,性能测试,生效
+兼容-多后端,free-api-hub / llama.cpp / Ollama 三后端可切换,配置核验,生效
+兼容-平台,适配 macOS Apple Silicon，路径/脚本双平台兼容,diagnose.py,生效
+易用-入口,飞书单 Bot 自然语言命令 + 看板可视化,用户验收,生效
+易用-命令,统一命令表（记忆/委派/起草/提醒/办公），降低认知负荷,用户验收,生效
+可维护-边界,三角色(闲聊/办公/日程)边界清晰，共享层解耦,架构评审,生效
+可维护-可观测,脚本内置 DEBUG 日志，日志分级归档,日志审计,生效
+可移植-环境,python -m venv 原生虚拟环境，依赖固定版本,diagnose.py,生效
+可移植-配置,环境/模型/端口配置外置 settings.yaml，禁止硬编码,配置核验,生效
