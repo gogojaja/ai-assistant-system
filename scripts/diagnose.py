@@ -58,7 +58,6 @@ EXPECTED = {
         "stop_all_services.sh",
         "restart_callback.sh",
         "diagnose.sh",
-        "update_docs.sh",
         "verify_phase2.sh"
     ],
     "services": {
