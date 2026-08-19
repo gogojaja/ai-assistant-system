@@ -16,3 +16,4 @@ REQ-DEF-013,SRS 缺标准章节,次要,已修复,需求评审（全面评审）,
 REQ-DEF-014,性能数字前后不一致,轻微,已修复,需求评审（全面评审）,"原 07_质量属性 性能-质量门禁 记 102/102 与 05/缺陷台账 105/105 不一致；2026-08-17 统一 07 为 105/105 与 05 及缺陷台账一致",2026-08-17 已闭环
 REQ-DEF-015,合规 A/B/C 分级依据未核实,次要,已修复,需求评审（全面评审）,"原 08_其他需求 称 A/B/C 遵循 iron_rules §3，经核查 iron_rules 不存在；2026-08-17 改按本项目安全架构与 07_质量属性 落地(A 凭证密钥/B 个人数据加密/C 一般日志)",2026-08-17 已闭环
 REQ-DEF-016,代码层残留 free-api-hub/llama.cpp 死分支与过期默认回退,主要,已修复,需求评审（全面评审）+CHG-001,"backend_utils.get_backend_config 异常回退默认 llama.cpp:8080、call_api/main.py 仍含 free-api-hub 分支、wake_model 残留 llama-server；2026-08-17 清理为 ollama 单后端（移除 chat_api_url/free-api-hub 分支，回退默认 ollama，wake_model 仅 ollama）",2026-08-17 已闭环
+REQ-DEF-017,SRS04 优先级列与需求收集清单 MoSCoW 不一致 6 项（CHAT-04/05/06/07/09、SHARED-04）,次要,已修复,需求评审（v1.2 重建复审）,CHAT-04/05/06/07/SHARED-04 按收集清单 Must 升为"高"；CHAT-09 跨会话记忆为 PRJ-001 核心增量(E2E 已过)维持"高"，收集清单 Should→Must；SRS04 与收集清单 MoSCoW 全量对齐,2026-08-18 本轮整改闭环

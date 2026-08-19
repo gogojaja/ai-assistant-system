@@ -1,11 +1,28 @@
 ﻿需求编号,模块编号,来源,功能模块,接口,测试用例,设计文档,状态
-REQ-001,CHAT-01,PRJ-001/SRS,callback_server,EXT-001,regression_test,架构设计文档,已实现
-REQ-002,CHAT-02,SRS 重建,chat-assistant/main.py talk(),EXT-002,regression_test,架构设计文档,已实现
-REQ-003,CHAT-04/CHAT-05/CHAT-06,SRS 重建,main.py get_weather()/search.py/knowledge_base.py search(),EXT-002/外部API/本地,regression_test,架构设计文档,已实现
-REQ-004,CHAT-07,SRS 重建,voice_handler.py process_voice_message(),whisper.cpp,regression_test,架构设计文档,已实现
-REQ-005,OFF-01/OFF-02/OFF-03,SRS 重建,office-assistant word/excel/ppt,文件消息,regression_test,架构设计文档,已实现
-REQ-006,LIFE-01~06,SRS 重建,life-assistant scheduler/health/travel/workout/work,中文关键词,regression_test,架构设计文档,已实现
-REQ-034,CHAT-09,PRJ-001 新增,chat-assistant _memory_*,本地,regression_test,架构设计文档,已实现
-REQ-035,CHAT-10,PRJ-001 新增,main.py #委派路由,文本命令,regression_test,架构设计文档,已实现
-REQ-036,CHAT-11,PRJ-001 新增,main.py 起草指令,文本命令,regression_test,架构设计文档,已实现
-REQ-037,LIFE-07,PRJ-001 新增,callback_server 守护线程 check_reminders,定时器,regression_test,架构设计文档,已实现
+CHAT-01,CHAT-01,架构设计文档,callback_server.py,EXT-001,regression_test,架构设计文档,已实现
+CHAT-02,CHAT-02,架构设计文档,chat-assistant/main.py talk(),EXT-002,regression_test,架构设计文档,已实现
+CHAT-03,CHAT-03,架构设计文档,message_handler.py _load/_save_history,本地,regression_test,架构设计文档,已实现
+CHAT-04,CHAT-04,架构设计文档,main.py get_weather(),外部天气API,regression_test,架构设计文档,已实现
+CHAT-05,CHAT-05,架构设计文档,search.py search_web/search_archive,搜索API,regression_test,架构设计文档,已实现
+CHAT-06,CHAT-06,架构设计文档,shared/knowledge_base.py search(),EXT-003,regression_test,架构设计文档,已实现
+CHAT-07,CHAT-07,架构设计文档,voice_handler.py process_voice_message(),whisper.cpp,regression_test,架构设计文档,已实现
+CHAT-08,CHAT-08,AGENTS.md,main.py _load/_save_custom_prompt(),本地,regression_test,架构设计文档,已实现
+CHAT-09,CHAT-09,PRJ-001(REQ-034),chat-assistant message_handler _memory_*,本地,regression_test,架构设计文档,已实现
+CHAT-10,CHAT-10,PRJ-001(REQ-035),main.py #委派路由,文本命令,regression_test,架构设计文档,已实现
+CHAT-11,CHAT-11,PRJ-001(REQ-036),main.py 起草指令,文本命令,regression_test,架构设计文档,已实现
+OFF-01,OFF-01,架构设计文档,office-assistant/core/word_processor.py,文件消息,regression_test,架构设计文档,已实现
+OFF-02,OFF-02,架构设计文档,office-assistant/core/excel_processor.py,文件消息,regression_test,架构设计文档,已实现
+OFF-03,OFF-03,架构设计文档,office-assistant/core/ppt_generator.py generate_presentation(),文本命令,regression_test,架构设计文档,已实现
+OFF-04,OFF-04,架构设计文档,office-assistant/core/folder_monitor.py start_monitor(),watchdog,regression_test,架构设计文档,已实现
+OFF-05,OFF-05,AGENTS.md,document_handler.py process_office_text(),文本命令,regression_test,架构设计文档,已实现
+LIFE-01,LIFE-01,架构设计文档,scheduler.py add/list/delete(),中文关键词,regression_test,架构设计文档,已实现
+LIFE-02,LIFE-02,架构设计文档,health_tracker.py record/report(),中文关键词,regression_test,架构设计文档,已实现
+LIFE-03,LIFE-03,架构设计文档,travel_planner.py create/list/activity(),中文关键词,regression_test,架构设计文档,已实现
+LIFE-04,LIFE-04,架构设计文档,workout_planner.py create/log(),中文关键词,regression_test,架构设计文档,已实现
+LIFE-05,LIFE-05,架构设计文档,work_planner.py create/set_status(),中文关键词,regression_test,架构设计文档,已实现
+LIFE-06,LIFE-06,架构设计文档,callback_server dashboard 路由,HTTP,regression_test,架构设计文档,已实现
+LIFE-07,LIFE-07,PRJ-001(REQ-037),callback_server 守护线程 check_reminders,定时器,regression_test,架构设计文档,已实现
+SHARED-01,SHARED-01,架构设计文档,shared/feishu_api.py send/download,EXT-001,regression_test,架构设计文档,已实现
+SHARED-02,SHARED-02,架构设计文档,shared/backend_utils.py call_api(),EXT-002,regression_test,架构设计文档,已实现
+SHARED-03,SHARED-03,架构设计文档,shared/crypto.py encrypt/decrypt,本地,regression_test,架构设计文档,已实现
+SHARED-04,SHARED-04,架构设计文档,shared/speech_utils.py transcribe(),whisper.cpp,regression_test,架构设计文档,已实现

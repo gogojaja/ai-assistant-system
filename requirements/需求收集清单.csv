@@ -7,9 +7,9 @@ CHAT-05,翻译/搜索（网络+本地归档）,架构设计文档,chat-assistant
 CHAT-06,知识库检索（BM25+中文二元组）,架构设计文档,chat-assistant,检索 top_k 命中,M,Must,已实现
 CHAT-07,语音输入（opus→wav→whisper.cpp 识别）,架构设计文档,chat-assistant,语音转文字成功,M,Must,已实现
 CHAT-08,自定义提示词管理,AGENTS.md,chat-assistant,设置/查看/重置可用,S,Should,已实现
-CHAT-09,跨会话记忆（REQ-034）,PRJ-001,chat-assistant,跨会话恢复关键上下文,S,Should,待确认
-CHAT-10,任务委派（REQ-035）,PRJ-001,chat-assistant,任务可委派至指定角色,S,Should,待确认
-CHAT-11,文档起草（REQ-036）,PRJ-001,chat-assistant,按主题生成文档草稿,S,Should,待确认
+CHAT-09,跨会话记忆（REQ-034）,PRJ-001,chat-assistant,跨会话恢复关键上下文,S,Must,已实现
+CHAT-10,任务委派（REQ-035）,PRJ-001,chat-assistant,任务可委派至指定角色,S,Should,已实现
+CHAT-11,文档起草（REQ-036）,PRJ-001,chat-assistant,按主题生成文档草稿,S,Should,已实现
 OFF-01,Word 处理（docx 解析+AI 摘要）,架构设计文档,office-assistant,docx 摘要返回有效,M,Must,已实现
 OFF-02,Excel 处理（xlsx 解析+结构分析+摘要）,架构设计文档,office-assistant,xlsx 分析返回有效,M,Must,已实现
 OFF-03,PPT 生成（文案分段+模板填充+pptx 输出）,架构设计文档,office-assistant,pptx 生成成功,M,Must,已实现
@@ -21,7 +21,7 @@ LIFE-03,旅行规划（行程/活动/打包）,架构设计文档,life-assistant
 LIFE-04,锻炼规划（计划/训练/记录）,架构设计文档,life-assistant,锻炼 CRUD 可用,S,Should,已实现
 LIFE-05,工作管理（任务/状态/优先级/截止）,架构设计文档,life-assistant,工作 CRUD 可用,M,Must,已实现
 LIFE-06,网页看板,架构设计文档,life-assistant,看板可访问,S,Should,已实现
-LIFE-07,主动提醒（REQ-037）,PRJ-001,life-assistant,到期自动推送,S,Should,待确认
+LIFE-07,主动提醒（REQ-037）,PRJ-001,life-assistant,到期自动推送,S,Should,已实现
 SHARED-01,飞书 API 封装（发送/下载/上传）,架构设计文档,shared,消息收发成功,M,Must,已实现
 SHARED-02,后端抽象（Ollama 单容器）,架构设计文档,shared,单后端,M,Must,已实现
 SHARED-03,数据加密（Fernet）,架构设计文档,shared,加解密正确,M,Must,已实现
