@@ -20,8 +20,8 @@ pgrep -f cloudflared >/dev/null && echo "  ✅ 运行中" || echo "  ❌ 未运�
 
 # 4. 虚拟环境
 echo "[4] 虚拟环境"
-for venv in venv-chat venv-office venv-dev; do
-    [ -d "assistants/chat-assistant/$venv" ] || [ -d "assistants/office-assistant/$venv" ] || [ -d "assistants/dev-assistant/$venv" ] && echo "  ✅ $venv" || echo "  ❌ $venv"
+for venv in venv-chat venv-office; do
+    [ -d "assistants/chat-assistant/$venv" ] || [ -d "assistants/office-assistant/$venv" ] && echo "  ✅ $venv" || echo "  ❌ $venv"
 done
 
 # 5. 1号AI 模块测试

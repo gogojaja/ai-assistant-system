@@ -15,11 +15,7 @@ python3.12 -m venv assistants/chat-assistant/venv-chat 2>/dev/null || python3 -m
 assistants/chat-assistant/venv-chat/bin/pip install flask requests pyyaml python-dotenv \
   deep-translator cryptography 2>&1 | tail -1
 
-echo "  venv-file..."
-python3.12 -m venv assistants/file-assistant/venv-file 2>/dev/null || python3 -m venv assistants/file-assistant/venv-file
-assistants/file-assistant/venv-file/bin/pip install flask requests pyyaml python-dotenv 2>&1 | tail -1
-
-  echo "  venv-office..."
+echo "  venv-office..."
 python3.12 -m venv assistants/office-assistant/venv-office 2>/dev/null || python3 -m venv assistants/office-assistant/venv-office
 assistants/office-assistant/venv-office/bin/pip install flask requests pyyaml python-dotenv \
   openpyxl python-docx python-pptx watchdog 2>&1 | tail -1

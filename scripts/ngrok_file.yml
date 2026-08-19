@@ -1,7 +1,0 @@
-version: "3"
-agent:
-    authtoken: 3EGUEGRub0DmcYpCwpeZIBRpS8w_4zybg57LBr4gTfimpjoVB
-tunnels:
-    proxy:
-        proto: http
-        addr: http://localhost:5001

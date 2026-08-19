@@ -44,8 +44,7 @@ EXPECTED = {
     "venv_paths": [
         "venv",
         "assistants/chat-assistant/venv-chat",
-        "assistants/office-assistant/venv-office",
-        "assistants/dev-assistant/venv-dev"
+        "assistants/office-assistant/venv-office"
     ],
     "required_dirs": [
         "assistants/chat-assistant/src",

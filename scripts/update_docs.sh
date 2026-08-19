@@ -49,7 +49,7 @@ text
 | 飞书回调服务 | `shared/feishu-callback/callback_server.py` | 接收事件、分发、调用 AI |
 | 1号AI 核心 | `assistants/chat-assistant/src/main.py` | 对话管理、搜索、知识库 |
 | 2号AI 办公文档助理 | `assistants/office-assistant/src/` | Word/Excel 解析、摘要、格式转换 |
-| 3号AI | `assistants/dev-assistant/src/` | 代码审查、文档生成（待开发） |
+| 3号AI | `assistants/life-assistant/src/` | 日程/健康/旅行/锻炼/工作管理 |
 | 语音识别 | `shared/whisper.cpp/` + `shared/voice/` | 音频转文字（Whisper.cpp） |
 | 隧道管理 | `scripts/start_all_services.sh` | 后台启动 Cloudflared |
 | 推理后端 | `~/llama.cpp/build/bin/llama-server` | 高性能 Metal 推理服务，监听 8080 |
@@ -94,7 +94,7 @@ text
 │ │ ├── core/summarizer.py
 │ │ ├── core/excel_processor.py
 │ │ └── core/converters.py
-│ └── dev-assistant/ # 待开发
+│ └── life-assistant/src/ # 3号AI 生活管理
 ├── shared/feishu-callback/callback_server.py
 ├── config/settings.yaml # 位置等信息
 ├── scripts/ # 运维脚本

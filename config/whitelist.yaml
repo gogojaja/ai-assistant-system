@@ -6,7 +6,6 @@ assistants:
       - "~/ai-assistant-system/assistants/chat-assistant"
     denied_paths:
       - "~/ai-assistant-system/data/office"
-      - "~/ai-assistant-system/data/dev"
 
   office:
     allowed_paths:
@@ -14,28 +13,4 @@ assistants:
       - "~/ai-assistant-system/assistants/office-assistant"
     denied_paths:
       - "~/ai-assistant-system/data/chat"
-      - "~/ai-assistant-system/data/dev"
-
-  file:
-    allowed_paths:
-      - "."          # ai-assistant-system 项目目录
-      - ".."         # 项目上一级目录（如 /Volumes/BR256G/）
-    denied_paths:
-      - "/etc"
-      - "/var"
-      - "/System"
-      - "/Library"
-      - "~/.ssh"
-      - "~/.config"
-      - "~/.gnupg"
-      - "~/.aws"
-      - "~/.kube"
-
-  dev:
-    allowed_paths:
-      - "~/ai-assistant-system/data/dev"
-      - "~/ai-assistant-system/assistants/dev-assistant"
-    denied_paths:
-      - "~/ai-assistant-system/data/chat"
-      - "~/ai-assistant-system/data/office"
 

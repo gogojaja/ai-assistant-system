@@ -9,9 +9,10 @@
 依赖：
     - 标准库：os, sys, json, time
     - 第三方：requests
-版本：v1.0
+版本：v2.0
 更新记录：
     - 2026-05-28: 初始创建，覆盖 3 个服务 5 个角色全部路由
+    - 2026-08-19: v2.0 对齐三角色基线，移除 4号文件(5082)/5号系统(5103) 服务测试段
 """
 import os
 import sys
@@ -20,8 +21,6 @@ import time
 import requests
 
 BASE_CALLBACK = "http://127.0.0.1:5101"
-BASE_FILE = "http://127.0.0.1:5082"
-BASE_SYS = "http://127.0.0.1:5103"
 
 TIMEOUT = 15
 results = {"pass": 0, "fail": 0, "skip": 0}
@@ -207,213 +206,10 @@ def test_callback_service():
                                           "sender": {"sender_id": {"open_id": "u_mock"}}}},
                           timeout=TIMEOUT)))
 
-    # ---------- 代理路由 ----------
-    _test("反向代理 /webhook_file",
-        lambda: _check("代理file",
-            requests.post(f"{BASE_CALLBACK}/webhook_file",
-                          json={"challenge": "proxy_test"}, timeout=TIMEOUT)))
-
-    _test("反向代理 /webhook_sys",
-        lambda: _check("代理sys",
-            requests.post(f"{BASE_CALLBACK}/webhook_sys",
-                          json={"challenge": "proxy_test"}, timeout=TIMEOUT)))
-
-    _test("反向代理 /health_file",
-        lambda: _check("健康file",
-            requests.get(f"{BASE_CALLBACK}/health_file", timeout=TIMEOUT)))
-
-    _test("反向代理 /health_sys",
-        lambda: _check("健康sys",
-            requests.get(f"{BASE_CALLBACK}/health_sys", timeout=TIMEOUT)))
-
-    _test("反向代理 未知路由",
-        lambda: _check("未知",
-            requests.post(f"{BASE_CALLBACK}/webhook_unknown",
-                          json={}, timeout=TIMEOUT), 404))
-
     # ---------- 看板 ----------
     _test("看板路由",
         lambda: _check("看板",
             requests.get(f"{BASE_CALLBACK}/dashboard/", timeout=TIMEOUT)))
-
-
-# =====================================================================
-# 2. 文件助手服务 (5082) — 4号AI
-# =====================================================================
-def test_file_service():
-    if filter_service and filter_service not in ("file", "all"):
-        return
-    _section("2. 文件助手 :5082（4号AI）")
-
-    _test("/health",
-        lambda: _check("health",
-            requests.get(f"{BASE_FILE}/health", timeout=TIMEOUT)))
-
-    _test("challenge 验证",
-        lambda: _check("challenge",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json={"challenge": "e2e_test"}, timeout=TIMEOUT)))
-
-    _test("空 body",
-        lambda: _check("空body",
-            requests.post(f"{BASE_FILE}/webhook", json={}, timeout=TIMEOUT), 400))
-
-    _test("4号AI 帮助",
-        lambda: _check("帮助",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_text_msg("帮助"), timeout=TIMEOUT)))
-
-    _test("4号AI 查看路径",
-        lambda: _check("查看",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_text_msg("查看 /"), timeout=TIMEOUT)))
-
-    _test("4号AI 搜索",
-        lambda: _check("搜索",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_text_msg("搜索 test"), timeout=TIMEOUT)))
-
-    _test("4号AI 信息",
-        lambda: _check("信息",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_text_msg("信息 /"), timeout=TIMEOUT)))
-
-    _test("4号AI 问号",
-        lambda: _check("？",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_text_msg("？"), timeout=TIMEOUT)))
-
-    _test("4号AI #4 前缀",
-        lambda: _check("#4",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_text_msg("#4 帮助"), timeout=TIMEOUT)))
-
-    _test("4号AI #file 前缀",
-        lambda: _check("#file",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_text_msg("#file 帮助"), timeout=TIMEOUT)))
-
-    _test("4号AI 文件消息（模拟）",
-        lambda: _check("文件消息",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_file_msg("test.txt", "fk_mock"), timeout=TIMEOUT)))
-
-    _test("4号AI 图片消息（模拟）",
-        lambda: _check("图片消息",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_image_msg("ik_mock"), timeout=TIMEOUT)))
-
-    _test("4号AI 语音消息（应拒绝）",
-        lambda: _check("语音拒绝",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_audio_msg("ak_mock"), timeout=TIMEOUT)))
-
-    _test("4号AI 未知消息类型",
-        lambda: _check("未知类型",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_text_msg_type("system", "unknown"), timeout=TIMEOUT)))
-
-    _test("4号AI schema 2.0",
-        lambda: _check("schema2.0",
-            requests.post(f"{BASE_FILE}/webhook",
-                          json=_text_msg_schema20("帮助"), timeout=TIMEOUT)))
-
-
-# =====================================================================
-# 3. 系统管理服务 (5103) — 5号AI
-# =====================================================================
-def test_sys_service():
-    if filter_service and filter_service not in ("sys", "all"):
-        return
-    _section("3. 系统管理 :5103（5号AI）")
-
-    _test("/health",
-        lambda: _check("health",
-            requests.get(f"{BASE_SYS}/health", timeout=TIMEOUT)))
-
-    _test("challenge 验证",
-        lambda: _check("challenge",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json={"challenge": "e2e_test"}, timeout=TIMEOUT)))
-
-    _test("空 body",
-        lambda: _check("空body",
-            requests.post(f"{BASE_SYS}/webhook", json={}, timeout=TIMEOUT), 400))
-
-    _test("5号AI help",
-        lambda: _check("help",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg("help"), timeout=TIMEOUT)))
-
-    _test("5号AI #5 sys status",
-        lambda: _check("#5 sys status",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg("#5 sys status"), timeout=TIMEOUT)))
-
-    _test("5号AI #5 sys disk",
-        lambda: _check("#5 sys disk",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg("#5 sys disk"), timeout=TIMEOUT)))
-
-    _test("5号AI #5 sys mem",
-        lambda: _check("#5 sys mem",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg("#5 sys mem"), timeout=TIMEOUT)))
-
-    _test("5号AI #5 sys load",
-        lambda: _check("#5 sys load",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg("#5 sys load"), timeout=TIMEOUT)))
-
-    _test("5号AI #5 svc list",
-        lambda: _check("#5 svc list",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg("#5 svc list"), timeout=TIMEOUT)))
-
-    _test("5号AI #5 ps list",
-        lambda: _check("#5 ps list",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg("#5 ps list"), timeout=TIMEOUT)))
-
-    _test("5号AI #5 log flask",
-        lambda: _check("#5 log flask",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg("#5 log flask"), timeout=TIMEOUT)))
-
-    _test("5号AI #5 backup now",
-        lambda: _check("#5 backup now",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg("#5 backup now"), timeout=TIMEOUT)))
-
-    _test("5号AI #5 backup list",
-        lambda: _check("#5 backup list",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg("#5 backup list"), timeout=TIMEOUT)))
-
-    _test("5号AI #sys 前缀（旧前缀兼容）",
-        lambda: _check("#sys",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg("#sys help"), timeout=TIMEOUT)))
-
-    _test("5号AI 文件消息（应拒绝）",
-        lambda: _check("文件拒绝",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_file_msg("test.txt", "fk_mock"), timeout=TIMEOUT)))
-
-    _test("5号AI 图片消息（应拒绝）",
-        lambda: _check("图片拒绝",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_image_msg("ik_mock"), timeout=TIMEOUT)))
-
-    _test("5号AI 语音消息（应拒绝）",
-        lambda: _check("语音拒绝",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_audio_msg("ak_mock"), timeout=TIMEOUT)))
-
-    _test("5号AI schema 2.0",
-        lambda: _check("schema2.0",
-            requests.post(f"{BASE_SYS}/webhook",
-                          json=_text_msg_schema20("#5 sys status"), timeout=TIMEOUT)))
 
 
 # =====================================================================
@@ -533,15 +329,13 @@ def _audio_msg(file_key, open_id="u_e2e_test"):
 if __name__ == "__main__":
     print("=" * 60)
     print("  飞书客户端模拟 · 端到端 HTTP 测试")
-    print(f"  回调服务 :5101  |  文件助手 :5082  |  系统管理 :5103")
+    print(f"  回调服务 :5101")
     print("=" * 60)
 
     target = filter_service or "all"
     print(f"\n  筛选: {target}\n")
 
     test_callback_service()
-    test_file_service()
-    test_sys_service()
 
     total = results["pass"] + results["fail"] + results["skip"]
     print(f"\n{'='*60}")

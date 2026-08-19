@@ -29,3 +29,4 @@ env_backups/
 # 环境特定配置（各环境独立管理，含飞书密钥 — 绝不提交到 git）
 config/settings.yaml
 **/.env
+assistants/chat-assistant/memory/

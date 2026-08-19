@@ -194,7 +194,9 @@
 | Excel集成 | `scripts/test_excel_integration.py` | — | 集成测试 |
 | 搜索工具 | `scripts/test_search.py` | — | 集成测试 |
 
-## 8. 端到端验证（2026-05-28）
+## 8. 端到端验证（2026-05-28，历史快照）
+
+> **归档注记（2026-08-19）**：下表为五角色时期的验证快照。PRJ-001 已裁剪 4号文件/5号系统助手，`webhook_sys`/`:5102`/`:5103` 路由已移除，现行回调仅暴露 `/health` 与 `/webhook`（:5101）。保留此表仅作历史追溯。
 
 | 端点 | 路由 | 结果 |
 |------|------|------|
@@ -212,7 +214,7 @@
 全部 10 项端到端 HTTP 探测通过。预计的降级警告（推理后端未启动、watchdog 未安装）不影响路由转发与命令分发。每次修改后执行以下命令验证：
 
 ```bash
-venv/bin/python3 scripts/regression_test.py          # 全量 105 项
+venv/bin/python3 scripts/regression_test.py          # 全量 88 项
 venv/bin/python3 scripts/regression_test.py --module chat  # 按模块筛选
 ```
 

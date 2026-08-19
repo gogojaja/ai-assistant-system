@@ -13,8 +13,9 @@
                assistants.chat-assistant.src.voice_handler (process_voice_message),
                assistants.office-assistant.src.document_handler (process_document_file),
                assistants.life-assistant.src.reminder (check_reminders, REQ-037)
-版本：v1.1
+版本：v1.2
 更新记录：
+    - 2026-08-19: 移除 file/sys 代理路由（webhook_file 等），对齐三角色基线
     - 2026-08-16: 新增主动提醒定时线程（REQ-037）
     - 2026-05-23: 重构，剥离附加功能到独立模块，仅保留路由和事件分派
 """
@@ -25,8 +26,7 @@ import logging
 import threading
 from pathlib import Path
 
-from flask import Flask, request, jsonify, Response
-import requests
+from flask import Flask, request, jsonify
 
 # 项目根路径
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -79,50 +79,6 @@ def webhook():
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"}), 200
-
-
-BACKENDS = {
-    "/webhook_file": ("http://127.0.0.1:5082", "/webhook"),
-    "/webhook_sys":  ("http://127.0.0.1:5103", "/webhook"),
-    "/health_file":  ("http://127.0.0.1:5082", "/health"),
-    "/health_sys":   ("http://127.0.0.1:5103", "/health"),
-}
-
-
-@app.route("/webhook_file", methods=["POST"])
-@app.route("/webhook_sys", methods=["POST"])
-@app.route("/health_file", methods=["GET"])
-@app.route("/health_sys", methods=["GET"])
-def proxy_backend():
-    path = request.path
-    backend, target_path = BACKENDS.get(path, (None, None))
-    if not backend:
-        return jsonify({"code": 404, "msg": "no route"}), 404
-    target_url = f"{backend}{target_path}"
-    headers = {k: v for k, v in request.headers if k.lower() not in ("host", "content-length")}
-    try:
-        resp = requests.request(
-            method=request.method,
-            url=target_url,
-            headers=headers,
-            data=request.get_data(),
-            params=request.args,
-            timeout=30,
-        )
-        return Response(
-            resp.content,
-            status=resp.status_code,
-            headers={k: v for k, v in resp.headers.items() if k.lower() not in ("transfer-encoding",)},
-        )
-    except requests.ConnectionError:
-        logger.error(f"后端连接失败: {target_url}")
-        return jsonify({"code": 502, "msg": f"backend unreachable"}), 502
-    except requests.Timeout:
-        logger.error(f"后端超时: {target_url}")
-        return jsonify({"code": 504, "msg": "backend timeout"}), 504
-    except Exception as e:
-        logger.error(f"代理异常: {e}")
-        return jsonify({"code": 500, "msg": str(e)}), 500
 
 
 def handle_event(data: dict):

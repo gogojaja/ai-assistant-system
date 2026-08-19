@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 模块名称：regression_test
-功能描述：五角色 AI 助理系统 — 全功能回归测试套件
-          覆盖全部 5 个 AI 角色 + 共享模块 + 回调服务
+功能描述：三角色 AI 助理系统 — 全功能回归测试套件
+          覆盖三角色 + 共享模块 + 回调服务
           支持独立运行、模块筛选、输出详细报告
 对外接口：
     - 直接运行：python3 scripts/regression_test.py
@@ -11,10 +11,11 @@
 依赖：
     - 标准库：os, sys, json, tempfile, re, math, logging, pathlib, importlib
     - 第三方：无（所有外部依赖模拟，缺失模块自动跳过）
-    - 项目内：全部 5 个助手 src 目录及 shared 模块
-版本：v1.1
+    - 项目内：三角色 src 目录及 shared 模块
+版本：v2.0
 更新记录：
     - 2026-05-28: 初始创建，覆盖全部 5 个 AI 角色 + 共享模块 + 回调服务
+    - 2026-08-19: v2.0 对齐需求基线 v1.2（PRJ-001），移除 file/sys 残留测试段
     - 2026-05-28: v1.1 修复缺失依赖自动跳过、相对导入处理、file_assistant 路径
 """
 import os
@@ -41,8 +42,6 @@ for p in [
     str(PROJECT_ROOT / "assistants/office-assistant/src"),
     str(PROJECT_ROOT / "assistants/office-assistant/src/core"),
     str(PROJECT_ROOT / "assistants/life-assistant/src"),
-    str(PROJECT_ROOT / "assistants/file-assistant/src"),
-    str(PROJECT_ROOT / "assistants/sys-assistant/src"),
 ]:
     if p not in sys.path:
         sys.path.insert(0, p)
@@ -53,7 +52,7 @@ _import_cache = {}
 
 if "--help" in sys.argv:
     print("用法: python3 scripts/regression_test.py [--module <名称>]")
-    print("  --module shared|chat|office|life|file|sys|callback  筛选测试模块")
+    print("  --module shared|chat|office|life|callback  筛选测试模块")
     sys.exit(0)
 
 if "--module" in sys.argv:
@@ -1041,397 +1040,12 @@ def test_life():
     _test("life _handle_work 空参数", test_handle_work_empty)
 
 
-# =====================================================================
-# 4号AI file-assistant 测试
-# =====================================================================
-def test_file():
-    _section("5. 4号AI file-assistant")
-
-    fa_src = str(PROJECT_ROOT / "assistants/file-assistant/src")
-    if fa_src not in sys.path:
-        sys.path.insert(0, fa_src)
-    fa_init_path = PROJECT_ROOT / "assistants/file-assistant/src/__init__.py"
-
-    # ---- 入口 process ----
-    def test_process_empty():
-        spec = importlib.util.spec_from_file_location("fa_init", str(fa_init_path))
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        result = mod.process("")
-        assert "4号文件助手" in result
-
-    def test_process_help():
-        spec = importlib.util.spec_from_file_location("fa_init2", str(fa_init_path))
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        assert "4号文件助手" in mod.process("帮助")
-
-    def test_process_unknown():
-        spec = importlib.util.spec_from_file_location("fa_init3", str(fa_init_path))
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        assert "未知命令" in mod.process("非法命令xyz")
-
-    _test("file process 空输入", test_process_empty)
-    _test("file process 帮助", test_process_help)
-    _test("file process 未知命令", test_process_unknown)
-
-    # ---- 命令解析 ----
-    def test_get_canonical():
-        _get_canonical_command = _safe_load_from_file(fa_init_path, "_get_canonical_command")
-        if not _get_canonical_command:
-            raise ImportError("file_assistant __init__ 未加载")
-        assert _get_canonical_command("查看") == "查看"
-        assert _get_canonical_command("列表") == "查看"
-        assert _get_canonical_command("搜索") == "搜索"
-        assert _get_canonical_command("帮助") == "帮助"
-        assert _get_canonical_command("不存在的命令") is None
-
-    def test_get_args():
-        _get_args = _safe_load_from_file(fa_init_path, "_get_args")
-        if not _get_args:
-            raise ImportError("file_assistant __init__ 未加载")
-        assert _get_args("查看 /tmp") == ["查看", "/tmp"]
-        assert _get_args('复制 "a b" c') == ["复制", "a b", "c"]
-        assert _get_args("") == []
-
-    def test_commands_structure():
-        COMMANDS = _safe_load_from_file(fa_init_path, "COMMANDS")
-        if not COMMANDS:
-            raise ImportError("file_assistant __init__ 未加载")
-        for cmd in ("查看", "搜索", "复制", "移动", "删除", "帮助"):
-            assert cmd in COMMANDS
-
-    _test("file 规范命令解析", test_get_canonical)
-    _test("file 参数解析(含引号)", test_get_args)
-    _test("file 命令结构完整", test_commands_structure)
-
-    # ---- security ----
-    def test_security_resolve():
-        resolve_path = _safe_import("security", "resolve_path")
-        if not resolve_path:
-            raise ImportError("security 模块未加载")
-        assert resolve_path("/tmp") is not None
-
-    def test_security_check_read():
-        check_file_operation = _safe_import("security", "check_file_operation")
-        resolve_path = _safe_import("security", "resolve_path")
-        if not check_file_operation or not resolve_path:
-            raise ImportError("security 模块未加载")
-        # 使用项目内路径（在白名单中）
-        test_path = resolve_path(str(PROJECT_ROOT / "scripts" / "regression_test.py"))
-        assert check_file_operation(test_path, "read")["valid"] is True
-
-    def test_security_block_sensitive():
-        check_file_operation = _safe_import("security", "check_file_operation")
-        if not check_file_operation:
-            raise ImportError("security 模块未加载")
-        assert check_file_operation("/etc/passwd", "read")["valid"] is False
-
-    def test_security_allowed_dirs():
-        get_allowed_dirs_from_config = _safe_import("security", "get_allowed_dirs_from_config")
-        if not get_allowed_dirs_from_config:
-            raise ImportError("security 模块未加载")
-        config_path = str(PROJECT_ROOT / "config" / "whitelist.yaml")
-        dirs = get_allowed_dirs_from_config(config_path)
-        assert isinstance(dirs, list)
-
-    _test("security 路径解析", test_security_resolve)
-    _test("security 读权限校验", test_security_check_read)
-    _test("security 敏感路径拦截", test_security_block_sensitive)
-    _test("security 白名单读取", test_security_allowed_dirs)
-
-    # ---- file_manager ----
-    def test_fm_ls():
-        cmd_ls = _safe_import("file_manager", "cmd_ls")
-        if not cmd_ls:
-            raise ImportError("file_manager 模块未加载")
-        result = cmd_ls("/tmp")
-        assert result is not None and len(result) > 0
-
-    def test_fm_info():
-        cmd_info = _safe_import("file_manager", "cmd_info")
-        if not cmd_info:
-            raise ImportError("file_manager 模块未加载")
-        assert cmd_info("/tmp") is not None
-
-    def test_fm_mkdir_trash():
-        cmd_mkdir = _safe_import("file_manager", "cmd_mkdir")
-        cmd_trash = _safe_import("file_manager", "cmd_trash")
-        if not cmd_mkdir or not cmd_trash:
-            raise ImportError("file_manager 模块未加载")
-        test_dir = f"/tmp/__test_file_4_{int(time.time())}__"
-        assert "已创建" in cmd_mkdir(test_dir)
-        assert os.path.isdir(test_dir)
-        assert "回收站" in cmd_trash(test_dir)
-        assert not os.path.exists(test_dir)
-
-    def test_fm_find():
-        cmd_find = _safe_import("file_manager", "cmd_find")
-        if not cmd_find:
-            raise ImportError("file_manager 模块未加载")
-        assert isinstance(cmd_find("/tmp", "test"), str)
-
-    _test("file_manager ls", test_fm_ls)
-    _test("file_manager info", test_fm_info)
-    _test("file_manager mkdir+trash", test_fm_mkdir_trash)
-    _test("file_manager find", test_fm_find)
-
-
-# =====================================================================
-# 5号AI sys-assistant 测试
-# =====================================================================
-
-def _load_sys_package():
-    """加载整个 sys-assistant 包，处理相对导入问题"""
-    src_dir = str(PROJECT_ROOT / "assistants/sys-assistant/src")
-    if src_dir not in sys.path:
-        sys.path.insert(0, src_dir)
-    pkg_name = "_sys_test_pkg"
-    # 加载 security (无相对导入) -> 放入 sys.modules
-    if f"{pkg_name}.security" not in sys.modules:
-        for mod_file, mod_attr in [
-            ("security", "security"),
-            ("system_monitor", "system_monitor"),
-            ("service_manager", "service_manager"),
-            ("process_manager", "process_manager"),
-            ("backup_manager", "backup_manager"),
-            ("log_viewer", "log_viewer"),
-        ]:
-            mpath = Path(src_dir) / f"{mod_file}.py"
-            if not mpath.exists():
-                continue
-            spec = importlib.util.spec_from_file_location(f"{pkg_name}.{mod_attr}", str(mpath))
-            mod = importlib.util.module_from_spec(spec)
-            mod.__package__ = pkg_name
-            sys.modules[f"{pkg_name}.{mod_attr}"] = mod
-            spec.loader.exec_module(mod)
-    # __init__.py 作为包入口
-    init_path = Path(src_dir) / "__init__.py"
-    if f"{pkg_name}.__init__" not in sys.modules:
-        spec = importlib.util.spec_from_file_location(f"{pkg_name}.__init__", str(init_path))
-        mod = importlib.util.module_from_spec(spec)
-        mod.__package__ = pkg_name
-        sys.modules[pkg_name] = mod
-        sys.modules[f"{pkg_name}.__init__"] = mod
-        spec.loader.exec_module(mod)
-    return pkg_name
-
-
-def test_sys():
-    _section("6. 5号AI sys-assistant")
-
-    PKG = _load_sys_package()
-
-    def _mod(name):
-        return sys.modules.get(f"{PKG}.{name}")
-
-    # ---- 入口 ----
-    def test_process_help():
-        init_mod = _mod("__init__")
-        if not init_mod:
-            raise ImportError("sys-assistant __init__ 未加载")
-        assert "系统管理" in init_mod.process("help")
-
-    def test_process_empty():
-        init_mod = _mod("__init__")
-        if not init_mod:
-            raise ImportError("sys-assistant __init__ 未加载")
-        assert "系统管理" in init_mod.process("")
-
-    def test_process_unknown():
-        init_mod = _mod("__init__")
-        if not init_mod:
-            raise ImportError("sys-assistant __init__ 未加载")
-        assert "未知命令" in init_mod.process("非法命令xyz")
-
-    _test("sys process 帮助", test_process_help)
-    _test("sys process 空输入", test_process_empty)
-    _test("sys process 未知命令", test_process_unknown)
-
-    # ---- security ----
-    def test_security_check():
-        sec = _mod("security")
-        if not sec:
-            raise ImportError("sys security 模块未加载")
-        assert sec.check_command("status")
-        assert sec.check_command("disk")
-        assert sec.check_command("ps_list")
-        assert not sec.check_command("rm -rf /")
-        assert sec.check_no_sudo("ls -la")
-        assert not sec.check_no_sudo("sudo rm -rf /")
-        allowed = sec.get_allowed_commands()
-        assert "status" in allowed and "help" in allowed
-        assert sec.validate_service_name("flask") and not sec.validate_service_name("unknown_svc")
-
-    def test_security_sanitize():
-        sec = _mod("security")
-        if not sec:
-            raise ImportError("sys security 模块未加载")
-        assert sec.sanitize_path("/etc/passwd") == ""
-        assert sec.is_allowed_log_file("flask")
-        assert sec.is_allowed_log_file("monitor")
-        assert not sec.is_allowed_log_file("nonexistent")
-
-    _test("sys security 命令白名单", test_security_check)
-    _test("sys security 路径+日志校验", test_security_sanitize)
-
-    # ---- system_monitor ----
-    def test_sysmon_status():
-        m = _mod("system_monitor")
-        if not m:
-            raise ImportError("system_monitor 未加载")
-        assert "系统状态" in m.cmd_status()
-
-    def test_sysmon_disk():
-        m = _mod("system_monitor")
-        if not m:
-            raise ImportError("system_monitor 未加载")
-        assert "磁盘" in m.cmd_disk()
-
-    def test_sysmon_mem():
-        m = _mod("system_monitor")
-        if not m:
-            raise ImportError("system_monitor 未加载")
-        assert m.cmd_mem() is not None
-
-    def test_sysmon_cpu():
-        m = _mod("system_monitor")
-        if not m:
-            raise ImportError("system_monitor 未加载")
-        assert "CPU" in m.cmd_cpu() or "核心" in m.cmd_cpu()
-
-    def test_sysmon_load():
-        m = _mod("system_monitor")
-        if not m:
-            raise ImportError("system_monitor 未加载")
-        assert m.cmd_load() is not None
-
-    def test_sysmon_uptime():
-        m = _mod("system_monitor")
-        if not m:
-            raise ImportError("system_monitor 未加载")
-        assert "up" in m.cmd_uptime() or "上" in m.cmd_uptime()
-
-    def test_sysmon_network():
-        m = _mod("system_monitor")
-        if not m:
-            raise ImportError("system_monitor 未加载")
-        assert "网络" in m.cmd_network() or "状态" in m.cmd_network()
-
-    _test("system_monitor status", test_sysmon_status)
-    _test("system_monitor disk", test_sysmon_disk)
-    _test("system_monitor mem", test_sysmon_mem)
-    _test("system_monitor cpu", test_sysmon_cpu)
-    _test("system_monitor load", test_sysmon_load)
-    _test("system_monitor uptime", test_sysmon_uptime)
-    _test("system_monitor network", test_sysmon_network)
-
-    # ---- service_manager ----
-    def test_svc_list():
-        m = _mod("service_manager")
-        if not m:
-            raise ImportError("service_manager 未加载")
-        assert "服务状态" in m.cmd_service_list()
-
-    def test_svc_unknown():
-        m = _mod("service_manager")
-        if not m:
-            raise ImportError("service_manager 未加载")
-        assert "未知服务" in m.cmd_service_status("nonexistent_svc_xyz")
-        assert "未知服务" in m.cmd_service_start("nonexistent_svc")
-
-    def test_svc_start_stop_all():
-        m = _mod("service_manager")
-        if not m:
-            raise ImportError("service_manager 未加载")
-        assert m.cmd_service_start_all() is not None
-        assert m.cmd_service_stop_all() is not None
-
-    _test("service_manager 列表", test_svc_list)
-    _test("service_manager 未知服务", test_svc_unknown)
-    _test("service_manager 启停全部", test_svc_start_stop_all)
-
-    # ---- process_manager ----
-    def test_ps_list():
-        m = _mod("process_manager")
-        if not m:
-            raise ImportError("process_manager 未加载")
-        assert "进程" in m.cmd_ps_list()
-
-    def test_ps_list_filter():
-        m = _mod("process_manager")
-        if not m:
-            raise ImportError("process_manager 未加载")
-        assert m.cmd_ps_list("launchd") is not None
-
-    def test_ps_kill_invalid():
-        m = _mod("process_manager")
-        if not m:
-            raise ImportError("process_manager 未加载")
-        assert "无效" in m.cmd_ps_kill("abc")
-        assert "无效" in m.cmd_ps_kill("0")
-
-    def test_ps_kill_nonexistent():
-        m = _mod("process_manager")
-        if not m:
-            raise ImportError("process_manager 未加载")
-        result = m.cmd_ps_kill("999999999")
-        assert "不存在" in result or "已不" in result
-
-    _test("process_manager 列表", test_ps_list)
-    _test("process_manager 过滤", test_ps_list_filter)
-    _test("process_manager 无效PID", test_ps_kill_invalid)
-    _test("process_manager 不存在PID", test_ps_kill_nonexistent)
-
-    # ---- log_viewer ----
-    def test_log_invalid():
-        m = _mod("log_viewer")
-        if not m:
-            raise ImportError("log_viewer 未加载")
-        assert "不允许" in m.cmd_log("nonexistent_log")
-
-    def test_log_search_empty():
-        m = _mod("log_viewer")
-        if not m:
-            raise ImportError("log_viewer 未加载")
-        assert "关键词" in m.cmd_log_search("")
-
-    _test("log_viewer 无效日志名", test_log_invalid)
-    _test("log_viewer 空搜索", test_log_search_empty)
-
-    # ---- backup_manager ----
-    def test_backup_list():
-        m = _mod("backup_manager")
-        if not m:
-            raise ImportError("backup_manager 未加载")
-        assert m.cmd_backup_list() is not None
-
-    def test_backup_restore_invalid():
-        m = _mod("backup_manager")
-        if not m:
-            raise ImportError("backup_manager 未加载")
-        # 确保备份目录存在，并创建一个备份文件让还原逻辑走到格式校验
-        backup_dir = PROJECT_ROOT / "backups"
-        backup_dir.mkdir(exist_ok=True)
-        fake_backup = backup_dir / "backup_test.tar.gz"
-        fake_backup.touch()
-        try:
-            result = m.cmd_backup_restore("abc")
-            assert "无效" in result or "请输" in result, f"期望报错，实际：{result}"
-        finally:
-            if fake_backup.exists():
-                fake_backup.unlink()
-
-    _test("backup_manager 列表", test_backup_list)
-    _test("backup_manager 无效还原", test_backup_restore_invalid)
-
 
 # =====================================================================
 # 回调服务测试
 # =====================================================================
 def test_callback():
-    _section("7. 回调服务 callback_server")
+    _section("5. 回调服务 callback_server")
 
     callback_path = PROJECT_ROOT / "shared/feishu-callback/callback_server.py"
     cb_src = str(callback_path.parent)
@@ -1476,8 +1090,8 @@ def test_callback():
             assert resp.status_code == 404
 
     def test_backends_config():
-        assert "/webhook_file" in cb_mod.BACKENDS
-        assert "/webhook_sys" in cb_mod.BACKENDS
+        assert not hasattr(cb_mod, "BACKENDS"), "残留 file/sys 代理路由定义"
+        assert not hasattr(cb_mod, "proxy_backend"), "残留 proxy_backend 函数"
 
     def test_dashboard_exists():
         assert cb_mod.dashboard_bp is not None
@@ -1569,7 +1183,7 @@ def print_report():
 
 if __name__ == "__main__":
     print(f"\n{'='*60}")
-    print(f"  五角色 AI 助理系统 · 全功能回归测试")
+    print(f"  三角色 AI 助理系统 · 全功能回归测试")
     print(f"  项目路径: {PROJECT_ROOT}")
     if module_filter:
         print(f"  模块筛选: {module_filter}")
@@ -1584,8 +1198,6 @@ if __name__ == "__main__":
         ("chat", test_chat),
         ("office", test_office),
         ("life", test_life),
-        ("file", test_file),
-        ("sys", test_sys),
         ("callback", test_callback),
     ]
 
